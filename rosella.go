@@ -219,6 +219,40 @@ func (s *Server) handleEvent(e Event) {
 	case command == "QUIT":
 		//Stop the client, which will auto part channels and quit
 		e.client.signalChan <- signalStop
+	case command == "TOPIC":
+		if len(args) < 1 {
+			e.client.reply(errMoreArgs)
+			return
+		}
+
+		channel, exists := s.channelMap[args[0]]
+		if exists == false {
+			e.client.reply(errNoSuchNick)
+			return
+		}
+
+		channelName := args[0]
+
+		if len(args) == 1 {
+			e.client.reply(rplTopic, channelName, channel.topic)
+			return
+		}
+
+		if args[1] == ":" {
+			channel.topic = ""
+			for _, client := range channel.clientMap {
+				client.reply(rplNoTopic, channelName)
+			}
+		} else {
+			topic := strings.Join(args[1:], " ")
+			topic = strings.TrimPrefix(topic, ":")
+			channel.topic = topic
+
+			for _, client := range channel.clientMap {
+				client.reply(rplTopic, channelName, channel.topic)
+			}
+		}
+
 	default:
 		log.Printf("Unknown command: %q", fields[0])
 	}
@@ -370,9 +404,9 @@ func (c *Client) reply(code int, args ...string) {
 	case rplPart:
 		c.outputChan <- fmt.Sprintf(":%s PART %s", args[0], args[1])
 	case rplTopic:
-		c.outputChan <- fmt.Sprintf(":%s 332 %s :%s", c.server.name, args[0], args[1])
+		c.outputChan <- fmt.Sprintf(":%s 332 %s %s :%s", c.server.name, c.nick, args[0], args[1])
 	case rplNoTopic:
-		c.outputChan <- fmt.Sprintf(":%s 331 %s :No topic is set", c.server.name, args[0])
+		c.outputChan <- fmt.Sprintf(":%s 331 %s %s :No topic is set", c.server.name, c.nick, args[0])
 	case rplNames:
 		//TODO: break long lists up into multiple messages
 		c.outputChan <- fmt.Sprintf(":%s 353 %s = %s :%s", c.server.name, c.nick, args[0], args[1])
