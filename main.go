@@ -20,13 +20,9 @@ func main() {
 	log.Printf("Rosella Initialising.")
 
 	//Init rosella itself
-	server, err := NewServer()
-	if err != nil {
-		panic(err)
-	}
-
+	server := NewServer()
 	server.name = *serverName
-	server.Start()
+	server.Run()
 
 	tlsConfig := new(tls.Config)
 

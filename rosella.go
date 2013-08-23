@@ -14,11 +14,9 @@ import (
 )
 
 type Server struct {
-	eventChan chan Event
-	running   bool
-
-	name string
-
+	eventChan  chan Event
+	running    bool
+	name       string
 	clientMap  map[string]*Client  //Map of nicks → clients
 	channelMap map[string]*Channel //Map of channel names → channels
 }
@@ -68,18 +66,19 @@ var (
 	channelRegexp = regexp.MustCompile(`^#[a-z0-9_\-]+$`)
 )
 
-func NewServer() (*Server, error) {
+func NewServer() *Server {
 	return &Server{eventChan: make(chan Event),
 		name:       "rosella",
 		clientMap:  make(map[string]*Client),
-		channelMap: make(map[string]*Channel)}, nil
+		channelMap: make(map[string]*Channel)}
 }
 
-func (s *Server) Start() {
-	if s.running == false {
-		s.running = true
-		go s.serverThread()
-	}
+func (s *Server) Run() {
+	go func() {
+		for {
+			s.handleEvent(<-s.eventChan)
+		}
+	}()
 }
 
 func (s *Server) HandleConnection(conn net.Conn) {
@@ -91,15 +90,6 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		channelMap: make(map[string]*Channel)}
 
 	go client.clientThread()
-}
-
-func (s *Server) serverThread() {
-	for {
-		select {
-		case e := <-s.eventChan:
-			s.handleEvent(e)
-		}
-	}
 }
 
 func (s *Server) handleEvent(e Event) {
@@ -245,7 +235,7 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 	default:
-		log.Printf("Unknown command: %q", fields[0])
+		log.Printf("Unknown command: %q", command)
 	}
 }
 
@@ -416,8 +406,6 @@ func (c *Client) reply(code int, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 462 :You need a valid nick first", c.server.name)
 	case errNoSuchNick:
 		c.outputChan <- fmt.Sprintf("%s 401 :No such nick/channel", c.server.name)
-	default:
-		log.Printf("Client.reply() with unknown reply code: %d", code)
 	}
 }
 
