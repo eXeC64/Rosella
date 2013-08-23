@@ -59,6 +59,7 @@ const (
 	errNickInUse
 	errAlreadyReg
 	errNoSuchNick
+	errUnknownCommand
 )
 
 var (
@@ -235,7 +236,7 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 	default:
-		log.Printf("Unknown command: %q", command)
+		e.client.reply(errUnknownCommand, command)
 	}
 }
 
@@ -405,7 +406,9 @@ func (c *Client) reply(code int, args ...string) {
 	case errAlreadyReg:
 		c.outputChan <- fmt.Sprintf(":%s 462 :You need a valid nick first", c.server.name)
 	case errNoSuchNick:
-		c.outputChan <- fmt.Sprintf("%s 401 :No such nick/channel", c.server.name)
+		c.outputChan <- fmt.Sprintf(":%s 401 :No such nick/channel", c.server.name)
+	case errUnknownCommand:
+		c.outputChan <- fmt.Sprintf(":%s 421 %s :Unknown command", c.server.name, args[0])
 	}
 }
 
