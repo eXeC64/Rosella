@@ -26,17 +26,15 @@ Design Principles
 * Rosella will not provide any mechanism for identifying other users beyond
   their nicknames.
 
-* Rosella will not allow any users to spy upon any other users.
+* Rosella will not allow any user to spy upon any other user.
 
-* Rosella's source code will remain simple and easy to read to enable quick
-  and easy code-reviews by its users.
+* Rosella's source code will be kept as easy to understand as possible.
 
 Contributing
 ------------
 
-Patches and pull requests are welcome as long as they follow the design
-principles I have laid.
-
+Patches and pull requests for new features and code clean ups are welcome as
+long as they follow the design principles.
 
 License
 -------
