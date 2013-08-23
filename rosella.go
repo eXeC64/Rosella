@@ -118,12 +118,12 @@ func (s *Server) handleEvent(e Event) {
 
 		//Check newNick is of valid formatting (regex)
 		if nickRegexp.MatchString(newNick) == false {
-			e.client.reply(errInvalidNick)
+			e.client.reply(errInvalidNick, newNick)
 			return
 		}
 
 		if _, exists := s.clientMap[newNick]; exists {
-			e.client.reply(errNickInUse)
+			e.client.reply(errNickInUse, newNick)
 			return
 		}
 
@@ -195,7 +195,7 @@ func (s *Server) handleEvent(e Event) {
 		} else if clientExists {
 			client.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", e.client.nick, client.nick, message)
 		} else {
-			e.client.reply(errNoSuchNick)
+			e.client.reply(errNoSuchNick, args[0])
 		}
 
 	case command == "QUIT":
@@ -209,7 +209,7 @@ func (s *Server) handleEvent(e Event) {
 
 		channel, exists := s.channelMap[args[0]]
 		if exists == false {
-			e.client.reply(errNoSuchNick)
+			e.client.reply(errNoSuchNick, args[0])
 			return
 		}
 
@@ -392,23 +392,23 @@ func (c *Client) reply(code int, args ...string) {
 	case rplNames:
 		//TODO: break long lists up into multiple messages
 		c.outputChan <- fmt.Sprintf(":%s 353 %s = %s :%s", c.server.name, c.nick, args[0], args[1])
-		c.outputChan <- fmt.Sprintf(":%s 366", c.server.name)
+		c.outputChan <- fmt.Sprintf(":%s 366 %s", c.server.name, c.nick)
 	case rplNickChange:
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
 	case errMoreArgs:
-		c.outputChan <- fmt.Sprintf(":%s 461 :Not enough params", c.server.name)
+		c.outputChan <- fmt.Sprintf(":%s 461 %s %s :Not enough params", c.server.name, c.nick, args[0])
 	case errNoNick:
-		c.outputChan <- fmt.Sprintf(":%s 431 :No nickanme given", c.server.name)
+		c.outputChan <- fmt.Sprintf(":%s 431 %s :No nickname given", c.server.name, c.nick)
 	case errInvalidNick:
-		c.outputChan <- fmt.Sprintf(":%s 432 :Erronenous nickname", c.server.name)
+		c.outputChan <- fmt.Sprintf(":%s 432 %s %s :Erronenous nickname", c.server.name, c.nick, args[0])
 	case errNickInUse:
-		c.outputChan <- fmt.Sprintf(":%s 433 :Nick already in use", c.server.name)
+		c.outputChan <- fmt.Sprintf(":%s 433 %s %s :Nick already in use", c.server.name, c.nick, args[0])
 	case errAlreadyReg:
 		c.outputChan <- fmt.Sprintf(":%s 462 :You need a valid nick first", c.server.name)
 	case errNoSuchNick:
-		c.outputChan <- fmt.Sprintf(":%s 401 :No such nick/channel", c.server.name)
+		c.outputChan <- fmt.Sprintf(":%s 401 %s %s :No such nick/channel", c.server.name, c.nick, args[0])
 	case errUnknownCommand:
-		c.outputChan <- fmt.Sprintf(":%s 421 %s :Unknown command", c.server.name, args[0])
+		c.outputChan <- fmt.Sprintf(":%s 421 %s %s :Unknown command", c.server.name, c.nick, args[0])
 	}
 }
 
