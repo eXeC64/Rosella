@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"math/rand"
+	"net"
 	"regexp"
 	"sort"
 	"strings"
@@ -14,8 +14,8 @@ import (
 )
 
 type Server struct {
-	eventChan  chan Event
-	running    bool
+	eventChan chan Event
+	running   bool
 
 	name string
 
@@ -69,7 +69,7 @@ var (
 )
 
 func NewServer() (*Server, error) {
-	return &Server{eventChan:  make(chan Event),
+	return &Server{eventChan: make(chan Event),
 		name:       "rosella",
 		clientMap:  make(map[string]*Client),
 		channelMap: make(map[string]*Channel)}, nil
