@@ -14,7 +14,6 @@ import (
 )
 
 type Server struct {
-	signalChan chan int
 	eventChan  chan Event
 	running    bool
 
@@ -46,7 +45,6 @@ type Event struct {
 
 const (
 	signalStop int = iota
-	signalDisconnect
 )
 
 const (
@@ -71,8 +69,7 @@ var (
 )
 
 func NewServer() (*Server, error) {
-	return &Server{signalChan: make(chan int),
-		eventChan:  make(chan Event),
+	return &Server{eventChan:  make(chan Event),
 		name:       "rosella",
 		clientMap:  make(map[string]*Client),
 		channelMap: make(map[string]*Channel)}, nil
@@ -99,12 +96,6 @@ func (s *Server) HandleConnection(conn net.Conn) {
 func (s *Server) serverThread() {
 	for {
 		select {
-		case s := <-s.signalChan:
-			if s == signalStop {
-				//TODO
-				//Disconnect all clients then return
-				return
-			}
 		case e := <-s.eventChan:
 			s.handleEvent(e)
 		}
