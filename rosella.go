@@ -70,6 +70,7 @@ const (
 	errUnknownCommand
 	errNotReg
 	errPassword
+	errNoPriv
 )
 
 var (
@@ -332,6 +333,31 @@ func (s *Server) handleEvent(e Event) {
 		}
 		e.client.reply(errPassword)
 
+	case command == "KILL":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
+		if e.client.operator == false {
+			e.client.reply(errNoPriv)
+			return
+		}
+
+		if len(args) < 1 {
+			e.client.reply(errMoreArgs)
+			return
+		}
+
+		nick := args[0]
+
+		if client, exists := s.clientMap[nick]; exists {
+			client.reply(rplKill, "An operator has disconnected you.")
+			client.disconnect()
+		} else {
+			e.client.reply(errNoSuchNick, nick)
+		}
+
 	default:
 		e.client.reply(errUnknownCommand, command)
 	}
@@ -392,13 +418,22 @@ func (c *Client) clientThread() {
 	go c.readThread(readSignalChan)
 	go c.writeThread(writeSignalChan, writeChan)
 
+	defer func() {
+		//Part from all channels
+		for channelName := range c.channelMap {
+			c.server.partChannel(c, channelName)
+		}
+
+		delete(c.server.clientMap, c.nick)
+	}()
+
 	for {
 		select {
 		case signal := <-c.signalChan:
 			if signal == signalStop {
 				readSignalChan <- signalStop
 				writeSignalChan <- signalStop
-				break
+				return
 			}
 		case line := <-c.outputChan:
 			select {
@@ -410,13 +445,6 @@ func (c *Client) clientThread() {
 			}
 		}
 	}
-
-	//Part from all channels
-	for channelName := range c.channelMap {
-		c.server.partChannel(c, channelName)
-	}
-
-	delete(c.server.clientMap, c.nick)
 
 }
 
@@ -499,7 +527,7 @@ func (c *Client) reply(code int, args ...string) {
 	case rplNickChange:
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
 	case rplKill:
-		c.outputChan <- fmt.Sprintf(":%s KILL %s A A %s", c.server.name, c.nick, args[0])
+		c.outputChan <- fmt.Sprintf(":%s KILL %s A %s", c.server.name, c.nick, args[0])
 	case rplMsg:
 		c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", args[0], args[1], args[2])
 	case rplList:
@@ -528,6 +556,8 @@ func (c *Client) reply(code int, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 451 :You have not registered", c.server.name)
 	case errPassword:
 		c.outputChan <- fmt.Sprintf(":%s 464 %s :Error, password incorrect", c.server.name, c.nick)
+	case errNoPriv:
+		c.outputChan <- fmt.Sprintf(":%s 481 %s :Permission denied", c.server.name, c.nick)
 	}
 }
 
