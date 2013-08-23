@@ -55,6 +55,7 @@ const (
 	rplNames
 	rplNickChange
 	rplKill
+	rplMsg
 	errMoreArgs
 	errNoNick
 	errInvalidNick
@@ -213,11 +214,11 @@ func (s *Server) handleEvent(e Event) {
 		if chanExists {
 			for _, c := range channel.clientMap {
 				if c != e.client {
-					c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", e.client.nick, args[0], message)
+					c.reply(rplMsg, e.client.nick, args[0], message)
 				}
 			}
 		} else if clientExists {
-			client.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", e.client.nick, client.nick, message)
+			client.reply(rplMsg, e.client.nick, client.nick, message)
 		} else {
 			e.client.reply(errNoSuchNick, args[0])
 		}
@@ -441,6 +442,8 @@ func (c *Client) reply(code int, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
 	case rplKill:
 		c.outputChan <- fmt.Sprintf(":%s KILL %s A A %s", c.server.name, c.nick, args[0])
+	case rplMsg:
+		c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", args[0], args[1], args[2])
 	case errMoreArgs:
 		c.outputChan <- fmt.Sprintf(":%s 461 %s %s :Not enough params", c.server.name, c.nick, args[0])
 	case errNoNick:
