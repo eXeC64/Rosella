@@ -273,6 +273,11 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 	case command == "LIST":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
 		if len(args) == 0 {
 			chanList := make([]string, 0, len(s.channelMap))
 
