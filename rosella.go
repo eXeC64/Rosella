@@ -51,7 +51,10 @@ const (
 
 const (
 	rplWelcome int = iota
+	rplJoin
+	rplPart
 	rplTopic
+	rplNoTopic
 	rplNames
 	rplNickChange
 	errMoreArgs
@@ -225,7 +228,7 @@ func (s *Server) joinChannel(client *Client, channelName string) {
 	channel, exists := s.channelMap[channelName]
 	if exists == false {
 		channel = &Channel{name: channelName,
-			topic:     "No Topic Set",
+			topic:     "",
 			clientMap: make(map[string]*Client)}
 		s.channelMap[channelName] = channel
 	}
@@ -234,20 +237,21 @@ func (s *Server) joinChannel(client *Client, channelName string) {
 	client.channelMap[channelName] = channel
 
 	for _, c := range channel.clientMap {
-		c.outputChan <- fmt.Sprintf(":%s JOIN %s", client.nick, channelName)
+		c.reply(rplJoin, client.nick, channelName)
 	}
 
-	//RPL_TOPIC
-	client.outputChan <- fmt.Sprintf(":rosella 332 %s :%s", channelName, channel.topic)
-
-	//RPL_NAMREPLY
-	var nicks string
-	for _, c := range channel.clientMap {
-		nicks = fmt.Sprintf("%s %s", c.nick, nicks)
+	if channel.topic != "" {
+		client.reply(rplTopic, channelName, channel.topic)
+	} else {
+		client.reply(rplNoTopic, channelName)
 	}
-	client.outputChan <- fmt.Sprintf(":rosella 353 %s = %s :%s", client.nick, channelName, nicks)
-	//RPL_ENDOFNAMES
-	client.outputChan <- ":rosella 366"
+
+	nicks := make([]string, 0, 100)
+	for nick := range channel.clientMap {
+		nicks = append(nicks, nick)
+	}
+
+	client.reply(rplNames, channelName, strings.Join(nicks, " "))
 }
 
 func (s *Server) partChannel(client *Client, channelName string) {
@@ -258,7 +262,7 @@ func (s *Server) partChannel(client *Client, channelName string) {
 
 	//Notify clients of the part
 	for _, c := range channel.clientMap {
-		c.outputChan <- fmt.Sprintf(":%s PART %s", client.nick, channelName)
+		c.reply(rplPart, client.nick, channelName)
 	}
 
 	delete(channel.clientMap, client.nick)
@@ -361,11 +365,18 @@ func (c *Client) reply(code int, args ...string) {
 	switch code {
 	case rplWelcome:
 		c.outputChan <- fmt.Sprintf(":%s 001 %s :Welcome to %s", c.server.name, c.nick, c.server.name)
+	case rplJoin:
+		c.outputChan <- fmt.Sprintf(":%s JOIN %s", args[0], args[1])
+	case rplPart:
+		c.outputChan <- fmt.Sprintf(":%s PART %s", args[0], args[1])
 	case rplTopic:
-		//Arg0 is channel, all following args are topic
-		c.outputChan <- fmt.Sprintf(":%s 332 %s :%s", args[0], strings.Join(args[1:], " "))
+		c.outputChan <- fmt.Sprintf(":%s 332 %s :%s", c.server.name, args[0], args[1])
+	case rplNoTopic:
+		c.outputChan <- fmt.Sprintf(":%s 331 %s :No topic is set", c.server.name, args[0])
 	case rplNames:
-		//Send the names
+		//TODO: break long lists up into multiple messages
+		c.outputChan <- fmt.Sprintf(":%s 353 %s = %s :%s", c.server.name, c.nick, args[0], args[1])
+		c.outputChan <- fmt.Sprintf(":%s 366", c.server.name)
 	case rplNickChange:
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
 	case errMoreArgs:
