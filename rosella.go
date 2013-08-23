@@ -56,6 +56,7 @@ const (
 	rplNickChange
 	rplKill
 	rplMsg
+	rplList
 	errMoreArgs
 	errNoNick
 	errInvalidNick
@@ -271,6 +272,31 @@ func (s *Server) handleEvent(e Event) {
 			}
 		}
 
+	case command == "LIST":
+		if len(args) == 0 {
+			chanList := make([]string, 0, len(s.channelMap))
+
+			for channelName, channel := range s.channelMap {
+				listItem := fmt.Sprintf("%s %d :%s", channelName, len(channel.clientMap), channel.topic)
+				chanList = append(chanList, listItem)
+			}
+
+			e.client.reply(rplList, chanList...)
+
+		} else {
+			channels := strings.Split(args[0], ",")
+			chanList := make([]string, 0, len(channels))
+
+			for _, channelName := range channels {
+				if channel, exists := s.channelMap[channelName]; exists {
+					listItem := fmt.Sprintf("%s %d :%s", channelName, len(channel.clientMap), channel.topic)
+					chanList = append(chanList, listItem)
+				}
+			}
+
+			e.client.reply(rplList, chanList...)
+		}
+
 	default:
 		e.client.reply(errUnknownCommand, command)
 	}
@@ -444,6 +470,12 @@ func (c *Client) reply(code int, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s KILL %s A A %s", c.server.name, c.nick, args[0])
 	case rplMsg:
 		c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", args[0], args[1], args[2])
+	case rplList:
+		c.outputChan <- fmt.Sprintf(":%s 321 %s", c.server.name, c.nick)
+		for _, listItem := range args {
+			c.outputChan <- fmt.Sprintf(":%s 322 %s %s", c.server.name, c.nick, listItem)
+		}
+		c.outputChan <- fmt.Sprintf(":%s 323 %s", c.server.name, c.nick)
 	case errMoreArgs:
 		c.outputChan <- fmt.Sprintf(":%s 461 %s %s :Not enough params", c.server.name, c.nick, args[0])
 	case errNoNick:
