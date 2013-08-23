@@ -89,6 +89,15 @@ func NewServer() *Server {
 func (s *Server) Run() {
 	go func() {
 		for {
+			event := <-s.eventChan
+			defer func() {
+				if err := recover(); err != nil {
+					log.Printf("Recovered from panic()")
+					log.Printf("%s sent %q", event.client.nick, event.input)
+					log.Println(err)
+				}
+			}()
+
 			s.handleEvent(<-s.eventChan)
 		}
 	}()
