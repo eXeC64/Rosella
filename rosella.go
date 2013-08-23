@@ -27,6 +27,7 @@ type Client struct {
 	outputChan chan string
 	nick       string
 	registered bool
+	connected  bool
 	channelMap map[string]*Channel
 }
 
@@ -53,6 +54,7 @@ const (
 	rplNoTopic
 	rplNames
 	rplNickChange
+	rplKill
 	errMoreArgs
 	errNoNick
 	errInvalidNick
@@ -88,8 +90,9 @@ func (s *Server) HandleConnection(conn net.Conn) {
 	client := &Client{server: s,
 		connection: conn,
 		outputChan: make(chan string),
-		signalChan: make(chan int),
-		channelMap: make(map[string]*Channel)}
+		signalChan: make(chan int, 3),
+		channelMap: make(map[string]*Channel),
+		connected:  true}
 
 	go client.clientThread()
 }
@@ -137,7 +140,13 @@ func (s *Server) handleEvent(e Event) {
 		e.client.setNick(newNick)
 
 	case command == "USER":
-		//This command is completely disused, we use nick to register
+		if e.client.nick == "" {
+			e.client.reply(rplKill, "Your nickname is already being used")
+			e.client.disconnect()
+		} else {
+			e.client.reply(rplWelcome)
+			e.client.registered = true
+		}
 
 	case command == "JOIN":
 		if e.client.registered == false {
@@ -220,7 +229,8 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 		//Stop the client, which will auto part channels and quit
-		e.client.signalChan <- signalStop
+		e.client.disconnect()
+
 	case command == "TOPIC":
 		if e.client.registered == false {
 			e.client.reply(errNotReg)
@@ -313,8 +323,8 @@ func (s *Server) partChannel(client *Client, channelName string) {
 func (c *Client) clientThread() {
 	defer c.connection.Close()
 
-	readSignalChan := make(chan int, 1)
-	writeSignalChan := make(chan int, 1)
+	readSignalChan := make(chan int, 3)
+	writeSignalChan := make(chan int, 3)
 	writeChan := make(chan string, 100)
 
 	go c.readThread(readSignalChan)
@@ -345,8 +355,8 @@ func (c *Client) clientThread() {
 		c.server.partChannel(c, channelName)
 	}
 
-	//Remove from client list
 	delete(c.server.clientMap, c.nick)
+
 }
 
 func (c *Client) readThread(signalChan chan int) {
@@ -401,8 +411,17 @@ func (c *Client) writeThread(signalChan chan int, outputChan chan string) {
 	}
 }
 
+func (c *Client) disconnect() {
+	c.connected = false
+	c.signalChan <- signalStop
+}
+
 //Send a reply to a user with the code specified
 func (c *Client) reply(code int, args ...string) {
+	if c.connected == false {
+		return
+	}
+
 	switch code {
 	case rplWelcome:
 		c.outputChan <- fmt.Sprintf(":%s 001 %s :Welcome to %s", c.server.name, c.nick, c.server.name)
@@ -420,6 +439,8 @@ func (c *Client) reply(code int, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 366 %s", c.server.name, c.nick)
 	case rplNickChange:
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
+	case rplKill:
+		c.outputChan <- fmt.Sprintf(":%s KILL %s A A %s", c.server.name, c.nick, args[0])
 	case errMoreArgs:
 		c.outputChan <- fmt.Sprintf(":%s 461 %s %s :Not enough params", c.server.name, c.nick, args[0])
 	case errNoNick:
@@ -452,35 +473,29 @@ func (c *Client) setNick(nick string) {
 	c.nick = nick
 	c.server.clientMap[c.nick] = c
 
-	if oldNick == "" {
-		//Oldnick is ""
-		c.registered = true
-		c.reply(rplWelcome)
-	} else {
-		clients := make([]string, 0, 100)
+	clients := make([]string, 0, 100)
 
-		for _, channel := range c.channelMap {
-			channel.clientMap[c.nick] = c
+	for _, channel := range c.channelMap {
+		channel.clientMap[c.nick] = c
 
-			//Collect list of client nicks who can see us
-			for client := range channel.clientMap {
-				clients = append(clients, client)
-			}
+		//Collect list of client nicks who can see us
+		for client := range channel.clientMap {
+			clients = append(clients, client)
 		}
+	}
 
-		//By sorting the nicks and skipping duplicates we send each client one message
-		sort.Strings(clients)
-		prevNick := ""
-		for _, nick := range clients {
-			if nick == prevNick {
-				continue
-			}
-			prevNick = nick
+	//By sorting the nicks and skipping duplicates we send each client one message
+	sort.Strings(clients)
+	prevNick := ""
+	for _, nick := range clients {
+		if nick == prevNick {
+			continue
+		}
+		prevNick = nick
 
-			client, exists := c.server.clientMap[nick]
-			if exists {
-				client.reply(rplNickChange, oldNick, c.nick)
-			}
+		client, exists := c.server.clientMap[nick]
+		if exists {
+			client.reply(rplNickChange, oldNick, c.nick)
 		}
 	}
 }
