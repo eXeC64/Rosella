@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net"
 	"regexp"
 	"sort"
@@ -27,6 +26,7 @@ type Client struct {
 	signalChan chan int
 	outputChan chan string
 	nick       string
+	registered bool
 	channelMap map[string]*Channel
 }
 
@@ -60,6 +60,7 @@ const (
 	errAlreadyReg
 	errNoSuchNick
 	errUnknownCommand
+	errNotReg
 )
 
 var (
@@ -127,19 +128,23 @@ func (s *Server) handleEvent(e Event) {
 			return
 		}
 
+		//Protect the server name from being used
+		if newNick == s.name {
+			e.client.reply(errNickInUse, newNick)
+			return
+		}
+
 		e.client.setNick(newNick)
 
 	case command == "USER":
-		if e.client.nick == "" {
-			//Give them a unique Guest nick
-			newNick := fmt.Sprintf("Guest%d", rand.Int())
-			for s.clientMap[newNick] != nil {
-				newNick = fmt.Sprintf("Guest%d", rand.Int())
-			}
-		}
-		e.client.reply(rplWelcome)
+		//This command is completely disused, we use nick to register
 
 	case command == "JOIN":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
 		if len(args) < 1 {
 			e.client.reply(errMoreArgs)
 			return
@@ -162,6 +167,11 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 	case command == "PART":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
 		if len(args) < 1 {
 			e.client.reply(errMoreArgs)
 			return
@@ -176,6 +186,11 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 	case command == "PRIVMSG":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
 		if len(args) < 2 {
 			e.client.reply(errMoreArgs)
 			return
@@ -199,9 +214,19 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 	case command == "QUIT":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
 		//Stop the client, which will auto part channels and quit
 		e.client.signalChan <- signalStop
 	case command == "TOPIC":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
 		if len(args) < 1 {
 			e.client.reply(errMoreArgs)
 			return
@@ -409,6 +434,8 @@ func (c *Client) reply(code int, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 401 %s %s :No such nick/channel", c.server.name, c.nick, args[0])
 	case errUnknownCommand:
 		c.outputChan <- fmt.Sprintf(":%s 421 %s %s :Unknown command", c.server.name, c.nick, args[0])
+	case errNotReg:
+		c.outputChan <- fmt.Sprintf(":%s 451 :You have not registered", c.server.name)
 	}
 }
 
@@ -425,29 +452,35 @@ func (c *Client) setNick(nick string) {
 	c.nick = nick
 	c.server.clientMap[c.nick] = c
 
-	clients := make([]string, 0, 100)
+	if oldNick == "" {
+		//Oldnick is ""
+		c.registered = true
+		c.reply(rplWelcome)
+	} else {
+		clients := make([]string, 0, 100)
 
-	for _, channel := range c.channelMap {
-		channel.clientMap[c.nick] = c
+		for _, channel := range c.channelMap {
+			channel.clientMap[c.nick] = c
 
-		//Collect list of client nicks who can see us
-		for client := range channel.clientMap {
-			clients = append(clients, client)
+			//Collect list of client nicks who can see us
+			for client := range channel.clientMap {
+				clients = append(clients, client)
+			}
 		}
-	}
 
-	//By sorting the nicks and skipping duplicates we send each client one message
-	sort.Strings(clients)
-	prevNick := ""
-	for _, nick := range clients {
-		if nick == prevNick {
-			continue
-		}
-		prevNick = nick
+		//By sorting the nicks and skipping duplicates we send each client one message
+		sort.Strings(clients)
+		prevNick := ""
+		for _, nick := range clients {
+			if nick == prevNick {
+				continue
+			}
+			prevNick = nick
 
-		client, exists := c.server.clientMap[nick]
-		if exists {
-			client.reply(rplNickChange, oldNick, c.nick)
+			client, exists := c.server.clientMap[nick]
+			if exists {
+				client.reply(rplNickChange, oldNick, c.nick)
+			}
 		}
 	}
 }
