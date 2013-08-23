@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"io"
 	"log"
@@ -13,11 +14,12 @@ import (
 )
 
 type Server struct {
-	eventChan  chan Event
-	running    bool
-	name       string
-	clientMap  map[string]*Client  //Map of nicks → clients
-	channelMap map[string]*Channel //Map of channel names → channels
+	eventChan   chan Event
+	running     bool
+	name        string
+	clientMap   map[string]*Client  //Map of nicks → clients
+	channelMap  map[string]*Channel //Map of channel names → channels
+	operatorMap map[string]string   //Map of usernames → SHA1 hashed passwords
 }
 
 type Client struct {
@@ -28,6 +30,7 @@ type Client struct {
 	nick       string
 	registered bool
 	connected  bool
+	operator   bool
 	channelMap map[string]*Channel
 }
 
@@ -57,6 +60,7 @@ const (
 	rplKill
 	rplMsg
 	rplList
+	rplOper
 	errMoreArgs
 	errNoNick
 	errInvalidNick
@@ -65,6 +69,7 @@ const (
 	errNoSuchNick
 	errUnknownCommand
 	errNotReg
+	errPassword
 )
 
 var (
@@ -74,9 +79,10 @@ var (
 
 func NewServer() *Server {
 	return &Server{eventChan: make(chan Event),
-		name:       "rosella",
-		clientMap:  make(map[string]*Client),
-		channelMap: make(map[string]*Channel)}
+		name:        "rosella",
+		clientMap:   make(map[string]*Client),
+		channelMap:  make(map[string]*Channel),
+		operatorMap: make(map[string]string)}
 }
 
 func (s *Server) Run() {
@@ -300,6 +306,31 @@ func (s *Server) handleEvent(e Event) {
 
 			e.client.reply(rplList, chanList...)
 		}
+	case command == "OPER":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
+		if len(args) < 2 {
+			e.client.reply(errMoreArgs)
+			return
+		}
+
+		username := args[0]
+		password := args[1]
+
+		if hashedPassword, exists := s.operatorMap[username]; exists {
+			h := sha1.New()
+			io.WriteString(h, password)
+			pass := fmt.Sprintf("%x", h.Sum(nil))
+			if hashedPassword == pass {
+				e.client.operator = true
+				e.client.reply(rplOper)
+				return
+			}
+		}
+		e.client.reply(errPassword)
 
 	default:
 		e.client.reply(errUnknownCommand, command)
@@ -477,8 +508,10 @@ func (c *Client) reply(code int, args ...string) {
 			c.outputChan <- fmt.Sprintf(":%s 322 %s %s", c.server.name, c.nick, listItem)
 		}
 		c.outputChan <- fmt.Sprintf(":%s 323 %s", c.server.name, c.nick)
+	case rplOper:
+		c.outputChan <- fmt.Sprintf(":%s 381 %s :You are now an operator", c.server.name, c.nick)
 	case errMoreArgs:
-		c.outputChan <- fmt.Sprintf(":%s 461 %s %s :Not enough params", c.server.name, c.nick, args[0])
+		c.outputChan <- fmt.Sprintf(":%s 461 %s :Not enough params", c.server.name, c.nick)
 	case errNoNick:
 		c.outputChan <- fmt.Sprintf(":%s 431 %s :No nickname given", c.server.name, c.nick)
 	case errInvalidNick:
@@ -493,6 +526,8 @@ func (c *Client) reply(code int, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 421 %s %s :Unknown command", c.server.name, c.nick, args[0])
 	case errNotReg:
 		c.outputChan <- fmt.Sprintf(":%s 451 :You have not registered", c.server.name)
+	case errPassword:
+		c.outputChan <- fmt.Sprintf(":%s 464 %s :Error, password incorrect", c.server.name, c.nick)
 	}
 }
 

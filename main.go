@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"os"
+	"strings"
 )
 
 func main() {
@@ -15,6 +17,8 @@ func main() {
 
 	serverName := flag.String("irc-servername", "rosella", "Server name displayed to clients")
 
+	authFile := flag.String("irc-authfile", "", "File containing usernames and passwords of operators.\nPasswords hashed with SHA1, one username and password per line, space separated. Lines starting with a # are ignored.")
+
 	flag.Parse()
 
 	log.Printf("Rosella Initialising.")
@@ -22,6 +26,32 @@ func main() {
 	//Init rosella itself
 	server := NewServer()
 	server.name = *serverName
+
+	if *authFile != "" {
+		log.Printf("Loading auth file: %q", *authFile)
+
+		f, err := os.Open(*authFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		data := make([]byte, 1024)
+		size, err := f.Read(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		lines := strings.Split(string(data[:size]), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "#") {
+				continue
+			}
+			fields := strings.Fields(line)
+
+			if len(fields) == 2 {
+				server.operatorMap[fields[0]] = fields[1]
+			}
+		}
+	}
 	server.Run()
 
 	tlsConfig := new(tls.Config)
