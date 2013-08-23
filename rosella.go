@@ -230,7 +230,6 @@ func (s *Server) handleEvent(e Event) {
 			return
 		}
 
-		//Stop the client, which will auto part channels and quit
 		e.client.disconnect()
 
 	case command == "TOPIC":
@@ -365,7 +364,6 @@ func (c *Client) clientThread() {
 	for {
 		select {
 		case signal := <-c.signalChan:
-			//Do stuff
 			if signal == signalStop {
 				readSignalChan <- signalStop
 				writeSignalChan <- signalStop
@@ -404,8 +402,7 @@ func (c *Client) readThread(signalChan chan int) {
 			ln, err := c.connection.Read(buf)
 			if err != nil {
 				if err == io.EOF {
-					//They must have dc'd
-					c.signalChan <- signalStop
+					c.disconnect()
 					return
 				}
 				continue
@@ -435,8 +432,7 @@ func (c *Client) writeThread(signalChan chan int, outputChan chan string) {
 			c.connection.SetWriteDeadline(time.Now().Add(time.Second * 30))
 			_, err := c.connection.Write(line)
 			if err != nil {
-				log.Printf("Write err: %q", err.Error())
-				c.signalChan <- signalStop
+				c.disconnect()
 				return
 			}
 		}
