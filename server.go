@@ -24,7 +24,7 @@ func NewServer() *Server {
 
 func (s *Server) Run() {
 	for event := range s.eventChan {
-		s.handleEvent(<-s.eventChan)
+		s.handleEvent(event)
 	}
 }
 
