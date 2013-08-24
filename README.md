@@ -34,14 +34,12 @@ Lines starting with a `#` are ignored as comments, as are blank lines. The
 password is hashed with SHA1. Username and password are placed on the same
 line and separated by a single space, as such:
 
-~~~
     #This line is a comment
     username1 sha1_hashed_password
 
     #Another comment, blank lines are ignored
     username2 sha1_hashed_password
     username3 sha1_hashed_password
-~~~
 
 
 Design Principles
