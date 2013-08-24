@@ -4,7 +4,7 @@ Rosella
 About
 -----
 Rosella is a small ircd (Internet Relay Chat Daemon).
-It partially implements RFC2812, but will never be fully compliant.
+It partially implements RFC1459, but will never be fully compliant.
 
 Rosella is intended to provide a portable, light-weight, near-zero-conf
 ircd capable of handling many simultaneous connections, whilst providing
