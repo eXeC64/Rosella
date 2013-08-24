@@ -16,6 +16,34 @@ An x.509 key and certificate are required to open a TLS listener.
 Proper key handling and certificate checking is the responsibility of the
 users. Rosella cannot protect you from stupidity or untrustworthy CA's.
 
+Usage
+-----
+Compilation required Go 1.1.2 or later. Just run `make` to compile Rosella.
+
+Command line options can be found by running `ircd -h`.
+
+###x.509 Certificate###
+Rosella expects you to provide a valid x.509 certificate and private key.
+You can generate these yourself with openssl, or obtain one from a certificate
+authority you trust.
+
+###Auth File###
+The auth file provides a list of usernames and hashed passwords that the /OPER
+command will accept. The format is one username and password pair per line.
+Lines starting with a `#` are ignored as comments, as are blank lines. The
+password is hashed with SHA1. Username and password are placed on the same
+line and separated by a single space, as such:
+
+~~~
+    #This line is a comment
+    username1 sha1_hashed_password
+
+    #Another comment, blank lines are ignored
+    username2 sha1_hashed_password
+    username3 sha1_hashed_password
+~~~
+
+
 Design Principles
 -----------------
 
