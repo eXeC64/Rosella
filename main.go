@@ -17,7 +17,7 @@ func main() {
 
 	serverName := flag.String("irc-servername", "rosella", "Server name displayed to clients")
 
-	authFile := flag.String("irc-authfile", "", "File containing usernames and passwords of operators.\nPasswords hashed with SHA1, one username and password per line, space separated. Lines starting with a # are ignored.")
+	authFile := flag.String("irc-authfile", "", "File containing usernames and passwords of operators.")
 
 	flag.Parse()
 
