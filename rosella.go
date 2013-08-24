@@ -14,7 +14,7 @@ type Server struct {
 type Client struct {
 	server     *Server
 	connection net.Conn
-	signalChan chan int
+	signalChan chan signalCode
 	outputChan chan string
 	nick       string
 	registered bool
@@ -34,12 +34,16 @@ type Channel struct {
 	clientMap map[string]*Client
 }
 
-const (
-	signalStop int = iota
-)
+type signalCode int
 
 const (
-	rplWelcome int = iota
+	signalStop signalCode = iota
+)
+
+type replyCode int
+
+const (
+	rplWelcome replyCode = iota
 	rplJoin
 	rplPart
 	rplTopic

@@ -100,7 +100,7 @@ func (c *Client) disconnect() {
 }
 
 //Send a reply to a user with the code specified
-func (c *Client) reply(code int, args ...string) {
+func (c *Client) reply(code replyCode, args ...string) {
 	if c.connected == false {
 		return
 	}
@@ -158,8 +158,8 @@ func (c *Client) reply(code int, args ...string) {
 }
 
 func (c *Client) clientThread() {
-	readSignalChan := make(chan int, 3)
-	writeSignalChan := make(chan int, 3)
+	readSignalChan := make(chan signalCode, 3)
+	writeSignalChan := make(chan signalCode, 3)
 	writeChan := make(chan string, 100)
 
 	go c.readThread(readSignalChan)
@@ -196,7 +196,7 @@ func (c *Client) clientThread() {
 
 }
 
-func (c *Client) readThread(signalChan chan int) {
+func (c *Client) readThread(signalChan chan signalCode) {
 	for {
 		select {
 		case signal := <-signalChan:
@@ -226,7 +226,7 @@ func (c *Client) readThread(signalChan chan int) {
 	}
 }
 
-func (c *Client) writeThread(signalChan chan int, outputChan chan string) {
+func (c *Client) writeThread(signalChan chan signalCode, outputChan chan string) {
 	for {
 		select {
 		case signal := <-signalChan:
