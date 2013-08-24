@@ -180,7 +180,7 @@ func (s *Server) handleEvent(e Event) {
 		if args[0] == "0" {
 			//Quit all channels
 			for channel := range e.client.channelMap {
-				s.partChannel(e.client, channel)
+				e.client.partChannel(channel)
 			}
 			return
 		}
@@ -189,7 +189,7 @@ func (s *Server) handleEvent(e Event) {
 		for _, channel := range channels {
 			//Join the channel if it's valid
 			if channelRegexp.Match([]byte(channel)) {
-				s.joinChannel(e.client, channel)
+				e.client.joinChannel(channel)
 			}
 		}
 
@@ -208,7 +208,7 @@ func (s *Server) handleEvent(e Event) {
 		for _, channel := range channels {
 			//Part the channel if it's valid
 			if channelRegexp.Match([]byte(channel)) {
-				s.partChannel(e.client, channel)
+				e.client.partChannel(channel)
 			}
 		}
 
@@ -372,26 +372,26 @@ func (s *Server) handleEvent(e Event) {
 	}
 }
 
-func (s *Server) joinChannel(client *Client, channelName string) {
-	channel, exists := s.channelMap[channelName]
+func (c *Client) joinChannel(channelName string) {
+	channel, exists := c.server.channelMap[channelName]
 	if exists == false {
 		channel = &Channel{name: channelName,
 			topic:     "",
 			clientMap: make(map[string]*Client)}
-		s.channelMap[channelName] = channel
+		c.server.channelMap[channelName] = channel
 	}
 
-	channel.clientMap[client.nick] = client
-	client.channelMap[channelName] = channel
+	channel.clientMap[c.nick] = c
+	c.channelMap[channelName] = channel
 
-	for _, c := range channel.clientMap {
-		c.reply(rplJoin, client.nick, channelName)
+	for _, client := range channel.clientMap {
+		client.reply(rplJoin, c.nick, channelName)
 	}
 
 	if channel.topic != "" {
-		client.reply(rplTopic, channelName, channel.topic)
+		c.reply(rplTopic, channelName, channel.topic)
 	} else {
-		client.reply(rplNoTopic, channelName)
+		c.reply(rplNoTopic, channelName)
 	}
 
 	nicks := make([]string, 0, 100)
@@ -399,22 +399,22 @@ func (s *Server) joinChannel(client *Client, channelName string) {
 		nicks = append(nicks, nick)
 	}
 
-	client.reply(rplNames, channelName, strings.Join(nicks, " "))
+	c.reply(rplNames, channelName, strings.Join(nicks, " "))
 }
 
-func (s *Server) partChannel(client *Client, channelName string) {
-	channel, exists := s.channelMap[channelName]
+func (c *Client) partChannel(channelName string) {
+	channel, exists := c.server.channelMap[channelName]
 	if exists == false {
 		return
 	}
 
 	//Notify clients of the part
-	for _, c := range channel.clientMap {
-		c.reply(rplPart, client.nick, channelName)
+	for _, client := range channel.clientMap {
+		client.reply(rplPart, c.nick, channelName)
 	}
 
-	delete(channel.clientMap, client.nick)
-	delete(client.channelMap, channelName)
+	delete(channel.clientMap, c.nick)
+	delete(c.channelMap, channelName)
 }
 
 func (c *Client) clientThread() {
@@ -430,7 +430,7 @@ func (c *Client) clientThread() {
 	defer func() {
 		//Part from all channels
 		for channelName := range c.channelMap {
-			c.server.partChannel(c, channelName)
+			c.partChannel(channelName)
 		}
 
 		delete(c.server.clientMap, c.nick)
