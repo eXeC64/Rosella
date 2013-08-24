@@ -8,16 +8,15 @@ import (
 	"strings"
 )
 
+var (
+	tlsKeyFile  = flag.String("tls-key", "tls.key", "The private key file used for TLS")
+	tlsCertFile = flag.String("tls-cert", "tls.crt", "The certificate file used for TLS")
+	ircAddress  = flag.String("irc-address", ":6697", "The address:port to bind to and listen for clients on")
+	serverName  = flag.String("irc-servername", "rosella", "Server name displayed to clients")
+	authFile    = flag.String("irc-authfile", "", "File containing usernames and passwords of operators.")
+)
+
 func main() {
-
-	tlsKeyFile := flag.String("tls-key", "tls.key", "The private key file used for TLS")
-	tlsCertFile := flag.String("tls-cert", "tls.crt", "The certificate file used for TLS")
-
-	ircAddress := flag.String("irc-address", ":6697", "The address:port to bind to and listen for clients on")
-
-	serverName := flag.String("irc-servername", "rosella", "Server name displayed to clients")
-
-	authFile := flag.String("irc-authfile", "", "File containing usernames and passwords of operators.")
 
 	flag.Parse()
 
@@ -52,7 +51,8 @@ func main() {
 			}
 		}
 	}
-	server.Run()
+
+	go server.Run()
 
 	tlsConfig := new(tls.Config)
 

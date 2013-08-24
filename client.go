@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -159,8 +158,6 @@ func (c *Client) reply(code int, args ...string) {
 }
 
 func (c *Client) clientThread() {
-	defer c.connection.Close()
-
 	readSignalChan := make(chan int, 3)
 	writeSignalChan := make(chan int, 3)
 	writeChan := make(chan string, 100)
@@ -175,6 +172,8 @@ func (c *Client) clientThread() {
 		}
 
 		delete(c.server.clientMap, c.nick)
+
+		c.connection.Close()
 	}()
 
 	for {
@@ -188,10 +187,9 @@ func (c *Client) clientThread() {
 		case line := <-c.outputChan:
 			select {
 			case writeChan <- line:
-				//It worked
+				continue
 			default:
-				log.Printf("Dropped a line for client: %q", c.nick)
-				//Do nothing, dropping the line
+				c.disconnect()
 			}
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"regexp"
 	"strings"
@@ -24,19 +23,9 @@ func NewServer() *Server {
 }
 
 func (s *Server) Run() {
-	go func() {
-		for event := range s.eventChan {
-			defer func() {
-				if err := recover(); err != nil {
-					log.Printf("Recovered from panic()")
-					log.Printf("%s sent %q", event.client.nick, event.input)
-					log.Println(err)
-				}
-			}()
-
-			s.handleEvent(<-s.eventChan)
-		}
-	}()
+	for event := range s.eventChan {
+		s.handleEvent(<-s.eventChan)
+	}
 }
 
 func (s *Server) HandleConnection(conn net.Conn) {
