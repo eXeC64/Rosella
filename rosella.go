@@ -68,6 +68,7 @@ const (
 	rplMsg
 	rplList
 	rplOper
+	rplChannelModeIs
 	errMoreArgs
 	errNoNick
 	errInvalidNick
