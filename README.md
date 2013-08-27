@@ -18,9 +18,9 @@ users. Rosella cannot protect you from stupidity or untrustworthy CA's.
 
 Usage
 -----
-Compilation required Go 1.1.2 or later. Just run `make` to compile Rosella.
+Compilation required Go 1.1.2 or later.
 
-Command line options can be found by running `ircd -h`.
+Command line options can be found by running `Rosella -h`.
 
 ###x.509 Certificate###
 Rosella expects you to provide a valid x.509 certificate and private key.
