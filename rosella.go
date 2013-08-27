@@ -32,6 +32,20 @@ type Channel struct {
 	name      string
 	topic     string
 	clientMap map[string]*Client
+	mode      ChannelMode
+	modeMap   map[string]*ClientMode
+}
+
+type ChannelMode struct {
+	anonymous   bool //Nicks are hidden
+	secret      bool //Channel is hidden from LIST
+	topicLocked bool //Only ops may change topic
+	moderated   bool //Only ops and voiced may speak
+}
+
+type ClientMode struct {
+	operator bool //Channel operator
+	voice    bool //Has voice
 }
 
 type signalCode int
