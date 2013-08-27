@@ -61,7 +61,14 @@ func (c *Client) joinChannel(channelName string) {
 		c.server.channelMap[channelKey] = channel
 	}
 
-	channel.clientMap[strings.ToLower(c.nick)] = c
+	nickKey := strings.ToLower(c.nick)
+
+	if _, inChannel := channel.clientMap[nickKey]; inChannel {
+		//Client is already in the channel, do nothing
+		return
+	}
+
+	channel.clientMap[nickKey] = c
 	c.channelMap[channelKey] = channel
 
 	for _, client := range channel.clientMap {
@@ -86,6 +93,11 @@ func (c *Client) partChannel(channelName string) {
 	channelKey := strings.ToLower(channelName)
 	channel, exists := c.server.channelMap[channelKey]
 	if exists == false {
+		return
+	}
+
+	if _, inChannel := channel.clientMap[strings.ToLower(c.nick)]; inChannel == false {
+		//Client isn't in this channel, do nothing
 		return
 	}
 
