@@ -153,6 +153,14 @@ func (s *Server) handleEvent(e Event) {
 		client, clientExists := s.clientMap[strings.ToLower(args[0])]
 
 		if chanExists {
+			if channel.mode.moderated {
+				clientMode := channel.modeMap[strings.ToLower(e.client.nick)]
+				if !clientMode.operator && !clientMode.voice {
+					//It's moderated and we're not +v or +o, do nothing
+					e.client.reply(errCannotSend, args[0])
+					return
+				}
+			}
 			for _, c := range channel.clientMap {
 				if c != e.client {
 					c.reply(rplMsg, e.client.nick, args[0], message)
