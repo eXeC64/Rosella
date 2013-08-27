@@ -11,7 +11,7 @@ import (
 
 var (
 	nickRegexp    = regexp.MustCompile(`^[a-zA-Z\[\]_^{|}][a-zA-Z0-9\[\]_^{|}]*$`)
-	channelRegexp = regexp.MustCompile(`^#[a-z0-9_\-]+$`)
+	channelRegexp = regexp.MustCompile(`^#[a-zA-Z0-9_\-]+$`)
 )
 
 func NewServer() *Server {
@@ -68,7 +68,7 @@ func (s *Server) handleEvent(e Event) {
 			return
 		}
 
-		if _, exists := s.clientMap[newNick]; exists {
+		if _, exists := s.clientMap[strings.ToLower(newNick)]; exists {
 			e.client.reply(errNickInUse, newNick)
 			return
 		}
@@ -149,8 +149,8 @@ func (s *Server) handleEvent(e Event) {
 
 		message := strings.Join(args[1:], " ")
 
-		channel, chanExists := s.channelMap[args[0]]
-		client, clientExists := s.clientMap[args[0]]
+		channel, chanExists := s.channelMap[strings.ToLower(args[0])]
+		client, clientExists := s.clientMap[strings.ToLower(args[0])]
 
 		if chanExists {
 			for _, c := range channel.clientMap {
@@ -183,7 +183,7 @@ func (s *Server) handleEvent(e Event) {
 			return
 		}
 
-		channel, exists := s.channelMap[args[0]]
+		channel, exists := s.channelMap[strings.ToLower(args[0])]
 		if exists == false {
 			e.client.reply(errNoSuchNick, args[0])
 			return
@@ -232,7 +232,7 @@ func (s *Server) handleEvent(e Event) {
 			chanList := make([]string, 0, len(channels))
 
 			for _, channelName := range channels {
-				if channel, exists := s.channelMap[channelName]; exists {
+				if channel, exists := s.channelMap[strings.ToLower(channelName)]; exists {
 					listItem := fmt.Sprintf("%s %d :%s", channelName, len(channel.clientMap), channel.topic)
 					chanList = append(chanList, listItem)
 				}
@@ -284,7 +284,7 @@ func (s *Server) handleEvent(e Event) {
 
 		nick := args[0]
 
-		if client, exists := s.clientMap[nick]; exists {
+		if client, exists := s.clientMap[strings.ToLower(nick)]; exists {
 			client.reply(rplKill, "An operator has disconnected you.")
 			client.disconnect()
 		} else {

@@ -11,25 +11,27 @@ import (
 
 func (c *Client) setNick(nick string) {
 	if c.nick != "" {
-		delete(c.server.clientMap, c.nick)
+		oldNickKey := strings.ToLower(c.nick)
+		delete(c.server.clientMap, oldNickKey)
 		for _, channel := range c.channelMap {
-			delete(channel.clientMap, c.nick)
+			delete(channel.clientMap, oldNickKey)
 		}
 	}
 
 	//Set up new nick
 	oldNick := c.nick
 	c.nick = nick
-	c.server.clientMap[c.nick] = c
+	nickKey := strings.ToLower(c.nick)
+	c.server.clientMap[nickKey] = c
 
 	clients := make([]string, 0, 100)
 
 	for _, channel := range c.channelMap {
-		channel.clientMap[c.nick] = c
+		channel.clientMap[nickKey] = c
 
 		//Collect list of client nicks who can see us
-		for client := range channel.clientMap {
-			clients = append(clients, client)
+		for _, client := range channel.clientMap {
+			clients = append(clients, client.nick)
 		}
 	}
 
@@ -42,7 +44,7 @@ func (c *Client) setNick(nick string) {
 		}
 		prevNick = nick
 
-		client, exists := c.server.clientMap[nick]
+		client, exists := c.server.clientMap[strings.ToLower(nick)]
 		if exists {
 			client.reply(rplNickChange, oldNick, c.nick)
 		}
@@ -50,16 +52,17 @@ func (c *Client) setNick(nick string) {
 }
 
 func (c *Client) joinChannel(channelName string) {
-	channel, exists := c.server.channelMap[channelName]
+	channelKey := strings.ToLower(channelName)
+	channel, exists := c.server.channelMap[channelKey]
 	if exists == false {
 		channel = &Channel{name: channelName,
 			topic:     "",
 			clientMap: make(map[string]*Client)}
-		c.server.channelMap[channelName] = channel
+		c.server.channelMap[channelKey] = channel
 	}
 
-	channel.clientMap[c.nick] = c
-	c.channelMap[channelName] = channel
+	channel.clientMap[strings.ToLower(c.nick)] = c
+	c.channelMap[channelKey] = channel
 
 	for _, client := range channel.clientMap {
 		client.reply(rplJoin, c.nick, channelName)
@@ -72,15 +75,16 @@ func (c *Client) joinChannel(channelName string) {
 	}
 
 	nicks := make([]string, 0, 100)
-	for nick := range channel.clientMap {
-		nicks = append(nicks, nick)
+	for _, client := range channel.clientMap {
+		nicks = append(nicks, client.nick)
 	}
 
 	c.reply(rplNames, channelName, strings.Join(nicks, " "))
 }
 
 func (c *Client) partChannel(channelName string) {
-	channel, exists := c.server.channelMap[channelName]
+	channelKey := strings.ToLower(channelName)
+	channel, exists := c.server.channelMap[channelKey]
 	if exists == false {
 		return
 	}
@@ -90,8 +94,11 @@ func (c *Client) partChannel(channelName string) {
 		client.reply(rplPart, c.nick, channelName)
 	}
 
-	delete(channel.clientMap, c.nick)
-	delete(c.channelMap, channelName)
+	delete(channel.clientMap, strings.ToLower(c.nick))
+
+	if len(channel.clientMap) == 0 {
+		delete(c.channelMap, channelKey)
+	}
 }
 
 func (c *Client) disconnect() {
@@ -171,7 +178,7 @@ func (c *Client) clientThread() {
 			c.partChannel(channelName)
 		}
 
-		delete(c.server.clientMap, c.nick)
+		delete(c.server.clientMap, strings.ToLower(c.nick))
 
 		c.connection.Close()
 	}()
@@ -237,8 +244,7 @@ func (c *Client) writeThread(signalChan chan signalCode, outputChan chan string)
 			line := []byte(fmt.Sprintf("%s\r\n", output))
 
 			c.connection.SetWriteDeadline(time.Now().Add(time.Second * 30))
-			_, err := c.connection.Write(line)
-			if err != nil {
+			if _, err := c.connection.Write(line); err != nil {
 				c.disconnect()
 				return
 			}
