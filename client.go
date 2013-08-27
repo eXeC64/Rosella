@@ -197,6 +197,8 @@ func (c *Client) reply(code replyCode, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 464 %s :Error, password incorrect", c.server.name, c.nick)
 	case errNoPriv:
 		c.outputChan <- fmt.Sprintf(":%s 481 %s :Permission denied", c.server.name, c.nick)
+	case errCannotSend:
+		c.outputChan <- fmt.Sprintf(":%s 404 %s %s :Cannot send to channel", c.server.name, c.nick, args[0])
 	}
 }
 

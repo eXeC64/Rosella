@@ -79,4 +79,5 @@ const (
 	errNotReg
 	errPassword
 	errNoPriv
+	errCannotSend
 )
