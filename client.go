@@ -52,13 +52,17 @@ func (c *Client) setNick(nick string) {
 }
 
 func (c *Client) joinChannel(channelName string) {
+	newChannel := false
+
 	channelKey := strings.ToLower(channelName)
 	channel, exists := c.server.channelMap[channelKey]
 	if exists == false {
 		channel = &Channel{name: channelName,
 			topic:     "",
-			clientMap: make(map[string]*Client)}
+			clientMap: make(map[string]*Client),
+			modeMap:   make(map[string]*ClientMode)}
 		c.server.channelMap[channelKey] = channel
+		newChannel = true
 	}
 
 	nickKey := strings.ToLower(c.nick)
@@ -68,7 +72,14 @@ func (c *Client) joinChannel(channelName string) {
 		return
 	}
 
+	mode := new(ClientMode)
+	if newChannel {
+		//If they created the channel, make them op
+		mode.operator = true
+	}
+
 	channel.clientMap[nickKey] = c
+	channel.modeMap[nickKey] = mode
 	c.channelMap[channelKey] = channel
 
 	for _, client := range channel.clientMap {
@@ -83,7 +94,18 @@ func (c *Client) joinChannel(channelName string) {
 
 	nicks := make([]string, 0, 100)
 	for _, client := range channel.clientMap {
-		nicks = append(nicks, client.nick)
+		prefix := ""
+
+		nickKey := strings.ToLower(client.nick)
+		if mode, exists := channel.modeMap[nickKey]; exists {
+			if mode.operator {
+				prefix = "@"
+			} else if mode.voice {
+				prefix = "+"
+			}
+		}
+
+		nicks = append(nicks, fmt.Sprintf("%s%s", prefix, client.nick))
 	}
 
 	c.reply(rplNames, channelName, strings.Join(nicks, " "))
