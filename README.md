@@ -1,6 +1,6 @@
 Rosella
 =======
-
+[![Build Status](https://drone.io/github.com/eXeC64/Rosella/status.png)](https://drone.io/github.com/eXeC64/Rosella/latest)
 About
 -----
 Rosella is a small ircd (Internet Relay Chat Daemon).
