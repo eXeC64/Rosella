@@ -43,6 +43,23 @@ type ChannelMode struct {
 	moderated   bool //Only ops and voiced may speak
 }
 
+func (m *ChannelMode) String() string {
+		modeStr := ""
+		if m.anonymous {
+			modeStr += "a"
+		}
+		if m.secret {
+			modeStr += "s"
+		}
+		if m.topicLocked {
+			modeStr += "t"
+		}
+		if m.moderated {
+			modeStr += "m"
+		}
+		return modeStr
+}
+
 type ClientMode struct {
 	operator bool //Channel operator
 	voice    bool //Has voice
