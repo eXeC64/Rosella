@@ -65,6 +65,16 @@ type ClientMode struct {
 	voice    bool //Has voice
 }
 
+func (m *ClientMode) Prefix() string {
+	if m.operator {
+		return "@"
+	} else if m.voice {
+		return "+"
+	} else {
+		return ""
+	}
+}
+
 type signalCode int
 
 const (

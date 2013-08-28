@@ -98,11 +98,7 @@ func (c *Client) joinChannel(channelName string) {
 
 		nickKey := strings.ToLower(client.nick)
 		if mode, exists := channel.modeMap[nickKey]; exists {
-			if mode.operator {
-				prefix = "@"
-			} else if mode.voice {
-				prefix = "+"
-			}
+			prefix = mode.Prefix()
 		}
 
 		nicks = append(nicks, fmt.Sprintf("%s%s", prefix, client.nick))
