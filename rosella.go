@@ -41,23 +41,27 @@ type ChannelMode struct {
 	secret      bool //Channel is hidden from LIST
 	topicLocked bool //Only ops may change topic
 	moderated   bool //Only ops and voiced may speak
+	noExternal  bool //Only users in the channel may talk to it
 }
 
 func (m *ChannelMode) String() string {
-		modeStr := ""
-		if m.anonymous {
-			modeStr += "a"
-		}
-		if m.secret {
-			modeStr += "s"
-		}
-		if m.topicLocked {
-			modeStr += "t"
-		}
-		if m.moderated {
-			modeStr += "m"
-		}
-		return modeStr
+	modeStr := ""
+	if m.anonymous {
+		modeStr += "a"
+	}
+	if m.secret {
+		modeStr += "s"
+	}
+	if m.topicLocked {
+		modeStr += "t"
+	}
+	if m.moderated {
+		modeStr += "m"
+	}
+	if m.noExternal {
+		modeStr += "n"
+	}
+	return modeStr
 }
 
 type ClientMode struct {

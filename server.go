@@ -153,6 +153,13 @@ func (s *Server) handleEvent(e Event) {
 		client, clientExists := s.clientMap[strings.ToLower(args[0])]
 
 		if chanExists {
+			if channel.mode.noExternal {
+				if _, inChannel := channel.clientMap[strings.ToLower(e.client.nick)]; !inChannel {
+					//Not in channel, not allowed to send
+					e.client.reply(errCannotSend, args[0])
+					return
+				}
+			}
 			if channel.mode.moderated {
 				clientMode := channel.modeMap[strings.ToLower(e.client.nick)]
 				if !clientMode.operator && !clientMode.voice {
@@ -164,6 +171,8 @@ func (s *Server) handleEvent(e Event) {
 			for _, c := range channel.clientMap {
 				if c != e.client {
 					c.reply(rplMsg, e.client.nick, args[0], message)
+					e.client.reply(errCannotSend, args[0])
+					return
 				}
 			}
 		} else if clientExists {
