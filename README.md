@@ -57,8 +57,11 @@ on a system with Go 1.1.2 or later installed.
 
 ~~~
 go get github.com/eXeC64/Rosella
-go build
+cd $GOPATH/src/github.com/eXeC64/Rosella
 ~~~
+
+You can then browse and review the source code at your leisure before compiling
+it by running `go build`.
 
 Usage
 -----
