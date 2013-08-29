@@ -45,11 +45,23 @@ The following irc commands are supported:
 * TOPIC
 * USER
 
+Download
+--------
+The latest x86-64 build of Rosella is available from Drone.io's continuous
+integration service.
+
+[Download Latest Build](https://drone.io/github.com/eXeC64/Rosella/files/Rosella)
+
+If you would rather review the code and then compile it yourself then run this
+on a system with Go 1.1.2 or later installed.
+
+~~~
+go get github.com/eXeC64/Rosella
+go build
+~~~
 
 Usage
 -----
-Compilation required Go 1.1.2 or later.
-
 Command line options can be found by running `Rosella -h`.
 
 ###x.509 Certificate###
