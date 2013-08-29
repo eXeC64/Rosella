@@ -41,6 +41,10 @@ line and separated by a single space, as such:
     username2 sha1_hashed_password
     username3 sha1_hashed_password
 
+**Cracking SHA1 hashed passwords is trivial. Do not rely upon it to keep your
+passwords secure. It is only used here to protect against people seeing your
+screen briefly when the auth file is open. Treat this file as you would treat
+a private key file.**
 
 Design Principles
 -----------------
