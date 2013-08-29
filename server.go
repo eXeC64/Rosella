@@ -353,7 +353,7 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 		clientMode := channel.modeMap[e.client.key]
-		if !clientMode.operator {
+		if !clientMode.operator && !e.client.operator {
 			e.client.reply(errNoPriv)
 			return
 		}
