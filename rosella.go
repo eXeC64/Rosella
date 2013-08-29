@@ -17,6 +17,7 @@ type Client struct {
 	signalChan chan signalCode
 	outputChan chan string
 	nick       string
+	key        string
 	registered bool
 	connected  bool
 	operator   bool

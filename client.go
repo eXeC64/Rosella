@@ -11,23 +11,22 @@ import (
 
 func (c *Client) setNick(nick string) {
 	if c.nick != "" {
-		oldNickKey := strings.ToLower(c.nick)
-		delete(c.server.clientMap, oldNickKey)
+		delete(c.server.clientMap, c.key)
 		for _, channel := range c.channelMap {
-			delete(channel.clientMap, oldNickKey)
+			delete(channel.clientMap, c.key)
 		}
 	}
 
 	//Set up new nick
 	oldNick := c.nick
 	c.nick = nick
-	nickKey := strings.ToLower(c.nick)
-	c.server.clientMap[nickKey] = c
+	c.key = strings.ToLower(c.nick)
+	c.server.clientMap[c.key] = c
 
 	clients := make([]string, 0, 100)
 
 	for _, channel := range c.channelMap {
-		channel.clientMap[nickKey] = c
+		channel.clientMap[c.key] = c
 
 		//Collect list of client nicks who can see us
 		for _, client := range channel.clientMap {
@@ -65,9 +64,7 @@ func (c *Client) joinChannel(channelName string) {
 		newChannel = true
 	}
 
-	nickKey := strings.ToLower(c.nick)
-
-	if _, inChannel := channel.clientMap[nickKey]; inChannel {
+	if _, inChannel := channel.clientMap[c.nick]; inChannel {
 		//Client is already in the channel, do nothing
 		return
 	}
@@ -78,8 +75,8 @@ func (c *Client) joinChannel(channelName string) {
 		mode.operator = true
 	}
 
-	channel.clientMap[nickKey] = c
-	channel.modeMap[nickKey] = mode
+	channel.clientMap[c.nick] = c
+	channel.modeMap[c.nick] = mode
 	c.channelMap[channelKey] = channel
 
 	for _, client := range channel.clientMap {
@@ -96,8 +93,7 @@ func (c *Client) joinChannel(channelName string) {
 	for _, client := range channel.clientMap {
 		prefix := ""
 
-		nickKey := strings.ToLower(client.nick)
-		if mode, exists := channel.modeMap[nickKey]; exists {
+		if mode, exists := channel.modeMap[client.nick]; exists {
 			prefix = mode.Prefix()
 		}
 
