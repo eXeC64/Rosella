@@ -112,7 +112,7 @@ func (s *Server) handleEvent(e Event) {
 		if args[0] == "0" {
 			//Quit all channels
 			for channel := range e.client.channelMap {
-				e.client.partChannel(channel)
+				e.client.partChannel(channel, "Disconnecting")
 			}
 			return
 		}
@@ -136,11 +136,13 @@ func (s *Server) handleEvent(e Event) {
 			return
 		}
 
+		reason := strings.Join(args[1:], " ")
+
 		channels := strings.Split(args[0], ",")
 		for _, channel := range channels {
 			//Part the channel if it's valid
 			if channelRegexp.Match([]byte(channel)) {
-				e.client.partChannel(channel)
+				e.client.partChannel(channel, reason)
 			}
 		}
 

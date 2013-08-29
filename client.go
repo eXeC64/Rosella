@@ -103,7 +103,7 @@ func (c *Client) joinChannel(channelName string) {
 	c.reply(rplNames, channelName, strings.Join(nicks, " "))
 }
 
-func (c *Client) partChannel(channelName string) {
+func (c *Client) partChannel(channelName, reason string) {
 	channelKey := strings.ToLower(channelName)
 	channel, exists := c.server.channelMap[channelKey]
 	if exists == false {
@@ -117,7 +117,7 @@ func (c *Client) partChannel(channelName string) {
 
 	//Notify clients of the part
 	for _, client := range channel.clientMap {
-		client.reply(rplPart, c.nick, channelName)
+		client.reply(rplPart, c.nick, channelName, reason)
 	}
 
 	delete(channel.clientMap, strings.ToLower(c.nick))
@@ -144,7 +144,7 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplJoin:
 		c.outputChan <- fmt.Sprintf(":%s JOIN %s", args[0], args[1])
 	case rplPart:
-		c.outputChan <- fmt.Sprintf(":%s PART %s", args[0], args[1])
+		c.outputChan <- fmt.Sprintf(":%s PART %s %s", args[0], args[1], args[2])
 	case rplTopic:
 		c.outputChan <- fmt.Sprintf(":%s 332 %s %s :%s", c.server.name, c.nick, args[0], args[1])
 	case rplNoTopic:
@@ -207,7 +207,7 @@ func (c *Client) clientThread() {
 	defer func() {
 		//Part from all channels
 		for channelName := range c.channelMap {
-			c.partChannel(channelName)
+			c.partChannel(channelName, "Disconnecting")
 		}
 
 		delete(c.server.clientMap, strings.ToLower(c.nick))
