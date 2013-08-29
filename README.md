@@ -16,6 +16,36 @@ An x.509 key and certificate are required to open a TLS listener.
 Proper key handling and certificate checking is the responsibility of the
 users. Rosella cannot protect you from stupidity or untrustworthy CA's.
 
+Features
+--------
+
+Rosella is a stand-alone server, and does not support server→server
+communication or services→server communication. Basic services are expected to
+be provided by IRC bots.
+
+The following channel modes are supported:
+
+* s - Secret. The channel is hidden from /LIST unless you are already in it.
+* n - No external. Only users in the channel may send messages to it.
+* t - Topic Locked. Only operators may set the topic.
+* m - Moderated. Only users with voice or operators may talk.
+
+The following irc commands are supported:
+
+* JOIN
+* KICK
+* KILL
+* LIST
+* MODE
+* NICK
+* OPER
+* PART
+* PRIVMSG
+* QUIT
+* TOPIC
+* USER
+
+
 Usage
 -----
 Compilation required Go 1.1.2 or later.
