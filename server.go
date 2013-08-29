@@ -326,6 +326,49 @@ func (s *Server) handleEvent(e Event) {
 			e.client.reply(errNoSuchNick, nick)
 		}
 
+	case command == "KICK":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
+		if len(args) < 2 {
+			e.client.reply(errMoreArgs)
+			return
+		}
+
+		channelKey := strings.ToLower(args[0])
+		targetKey := strings.ToLower(args[1])
+
+		channel, channelExists := s.channelMap[channelKey]
+		if !channelExists {
+			e.client.reply(errNoSuchNick, args[0])
+			return
+		}
+
+		target, targetExists := channel.clientMap[targetKey]
+		if !targetExists {
+			e.client.reply(errNoSuchNick, args[1])
+			return
+		}
+
+		clientMode := channel.modeMap[e.client.key]
+		if !clientMode.operator {
+			e.client.reply(errNoPriv)
+			return
+		}
+
+		reason := strings.Join(args[2:], " ")
+
+		//It worked
+		for _, client := range channel.clientMap {
+			client.reply(rplKick, e.client.nick, channel.name, target.nick, reason)
+		}
+
+		delete(channel.clientMap, targetKey)
+		delete(channel.modeMap, targetKey)
+		delete(target.channelMap, channelKey)
+
 	case command == "MODE":
 		if e.client.registered == false {
 			e.client.reply(errNotReg)
