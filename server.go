@@ -319,8 +319,10 @@ func (s *Server) handleEvent(e Event) {
 
 		nick := args[0]
 
+		reason := strings.Join(args[1:], " ")
+
 		if client, exists := s.clientMap[strings.ToLower(nick)]; exists {
-			client.reply(rplKill, "An operator has disconnected you.")
+			client.reply(rplKill, e.client.nick, reason)
 			client.disconnect()
 		} else {
 			e.client.reply(errNoSuchNick, nick)

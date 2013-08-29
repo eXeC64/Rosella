@@ -156,7 +156,7 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplNickChange:
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
 	case rplKill:
-		c.outputChan <- fmt.Sprintf(":%s KILL %s A %s", c.server.name, c.nick, args[0])
+		c.outputChan <- fmt.Sprintf(":%s KILL %s A %s", args[0], c.nick, args[1])
 	case rplMsg:
 		c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", args[0], args[1], args[2])
 	case rplList:
