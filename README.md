@@ -103,7 +103,7 @@ Design Principles
 
 * Rosella will not allow any user to spy upon any other user.
 
-* Rosella's source code will be kept as easy to understand as possible.
+* Rosella's source code will be kept as easy to review as possible.
 
 Contributing
 ------------
