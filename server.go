@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"regexp"
 	"strings"
@@ -40,6 +41,13 @@ func (s *Server) HandleConnection(conn net.Conn) {
 }
 
 func (s *Server) handleEvent(e Event) {
+	defer func(event Event) {
+		err := recover()
+		if err != nil {
+			log.Printf("Recovered from errer when handling event: %+v", event)
+			log.Println(err)
+		}
+	}(e)
 	fields := strings.Fields(e.input)
 
 	if len(fields) < 1 {
