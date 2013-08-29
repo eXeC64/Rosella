@@ -242,6 +242,12 @@ func (s *Server) handleEvent(e Event) {
 			chanList := make([]string, 0, len(s.channelMap))
 
 			for channelName, channel := range s.channelMap {
+				if channel.mode.secret {
+					if _, inChannel := channel.clientMap[strings.ToLower(e.client.nick)]; !inChannel {
+						//Not in the channel, skip
+						continue
+					}
+				}
 				listItem := fmt.Sprintf("%s %d :%s", channelName, len(channel.clientMap), channel.topic)
 				chanList = append(chanList, listItem)
 			}
