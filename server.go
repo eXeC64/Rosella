@@ -211,6 +211,12 @@ func (s *Server) handleEvent(e Event) {
 			return
 		}
 
+		clientMode := channel.modeMap[strings.ToLower(e.client.nick)]
+		if channel.mode.topicLocked && !clientMode.operator {
+			e.client.reply(errNoPriv)
+			return
+		}
+
 		if args[1] == ":" {
 			channel.topic = ""
 			for _, client := range channel.clientMap {
