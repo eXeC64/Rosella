@@ -171,8 +171,6 @@ func (s *Server) handleEvent(e Event) {
 			for _, c := range channel.clientMap {
 				if c != e.client {
 					c.reply(rplMsg, e.client.nick, args[0], message)
-					e.client.reply(errCannotSend, args[0])
-					return
 				}
 			}
 		} else if clientExists {
@@ -306,6 +304,113 @@ func (s *Server) handleEvent(e Event) {
 			client.disconnect()
 		} else {
 			e.client.reply(errNoSuchNick, nick)
+		}
+
+	case command == "MODE":
+		if e.client.registered == false {
+			e.client.reply(errNotReg)
+			return
+		}
+
+		if len(args) < 1 {
+			e.client.reply(errMoreArgs)
+			return
+		}
+
+		channelKey := strings.ToLower(args[0])
+
+		channel, channelExists := s.channelMap[channelKey]
+		if !channelExists {
+			e.client.reply(errNoSuchNick, args[0])
+			return
+		}
+		mode := channel.mode
+
+		if len(args) == 1 {
+			//No more args, they just want the mode
+			e.client.reply(rplChannelModeIs, args[0], mode.String(), "")
+			return
+		}
+
+		if cm, ok := channel.modeMap[strings.ToLower(e.client.nick)]; !ok || !cm.operator {
+			//Not an operator
+			e.client.reply(errNoPriv)
+			return
+		}
+
+		hasClient := false
+		var oldClientMode, newClientMode *ClientMode
+		var targetClient *Client
+		if len(args) >= 3 {
+			clientKey := strings.ToLower(args[2])
+			oldClientMode, hasClient = channel.modeMap[clientKey]
+			if hasClient {
+				targetClient = channel.clientMap[clientKey]
+				newClientMode = new(ClientMode)
+				*newClientMode = *oldClientMode
+			}
+		}
+
+		mod := strings.ToLower(args[1])
+		if strings.HasPrefix(mod, "+") {
+			for _, char := range mod {
+				switch char {
+				case 'a':
+					mode.anonymous = true
+				case 's':
+					mode.secret = true
+				case 't':
+					mode.topicLocked = true
+				case 'm':
+					mode.moderated = true
+				case 'n':
+					mode.noExternal = true
+				case 'o':
+					if hasClient {
+						newClientMode.operator = true
+					}
+				case 'v':
+					if hasClient {
+						newClientMode.voice = true
+					}
+				}
+			}
+		} else if strings.HasPrefix(mod, "-") {
+			for _, char := range mod {
+				switch char {
+				case 'a':
+					mode.anonymous = false
+				case 's':
+					mode.secret = false
+				case 't':
+					mode.topicLocked = false
+				case 'm':
+					mode.moderated = false
+				case 'n':
+					mode.noExternal = false
+				case 'o':
+					if hasClient {
+						newClientMode.operator = false
+					}
+				case 'v':
+					if hasClient {
+						newClientMode.voice = false
+					}
+				}
+			}
+		}
+
+		if hasClient {
+			*oldClientMode = *newClientMode
+		}
+		channel.mode = mode
+
+		for _, client := range channel.clientMap {
+			if hasClient {
+				client.reply(rplChannelModeIs, args[0], args[1], targetClient.nick)
+			} else {
+				client.reply(rplChannelModeIs, args[0], args[1], "")
+			}
 		}
 
 	default:

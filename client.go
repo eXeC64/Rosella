@@ -172,7 +172,7 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplOper:
 		c.outputChan <- fmt.Sprintf(":%s 381 %s :You are now an operator", c.server.name, c.nick)
 	case rplChannelModeIs:
-		c.outputChan <- fmt.Sprintf(":%s 324 %s %s %s", c.server.name, c.nick, args[0], args[1])
+		c.outputChan <- fmt.Sprintf(":%s 324 %s %s %s %s", c.server.name, c.nick, args[0], args[1], args[2])
 	case errMoreArgs:
 		c.outputChan <- fmt.Sprintf(":%s 461 %s :Not enough params", c.server.name, c.nick)
 	case errNoNick:

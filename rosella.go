@@ -79,6 +79,17 @@ func (m *ClientMode) Prefix() string {
 	}
 }
 
+func (m *ClientMode) String() string {
+	modeStr := ""
+	if m.operator {
+		modeStr += "o"
+	}
+	if m.voice {
+		modeStr += "v"
+	}
+	return modeStr
+}
+
 type signalCode int
 
 const (
