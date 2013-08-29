@@ -367,8 +367,6 @@ func (s *Server) handleEvent(e Event) {
 		if strings.HasPrefix(mod, "+") {
 			for _, char := range mod {
 				switch char {
-				case 'a':
-					mode.anonymous = true
 				case 's':
 					mode.secret = true
 				case 't':
@@ -390,8 +388,6 @@ func (s *Server) handleEvent(e Event) {
 		} else if strings.HasPrefix(mod, "-") {
 			for _, char := range mod {
 				switch char {
-				case 'a':
-					mode.anonymous = false
 				case 's':
 					mode.secret = false
 				case 't':

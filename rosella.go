@@ -37,7 +37,6 @@ type Channel struct {
 }
 
 type ChannelMode struct {
-	anonymous   bool //Nicks are hidden
 	secret      bool //Channel is hidden from LIST
 	topicLocked bool //Only ops may change topic
 	moderated   bool //Only ops and voiced may speak
@@ -46,9 +45,6 @@ type ChannelMode struct {
 
 func (m *ChannelMode) String() string {
 	modeStr := ""
-	if m.anonymous {
-		modeStr += "a"
-	}
 	if m.secret {
 		modeStr += "s"
 	}
