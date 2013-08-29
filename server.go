@@ -396,9 +396,13 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 		if cm, ok := channel.modeMap[strings.ToLower(e.client.nick)]; !ok || !cm.operator {
-			//Not an operator
-			e.client.reply(errNoPriv)
-			return
+			//Not a channel operator.
+
+			//If they're not an irc operator either, they'll fail
+			if !e.client.operator {
+				e.client.reply(errNoPriv)
+				return
+			}
 		}
 
 		hasClient := false
