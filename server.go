@@ -74,7 +74,7 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 		//Protect the server name from being used
-		if newNick == s.name {
+		if strings.ToLower(newNick) == strings.ToLower(s.name) {
 			e.client.reply(errNickInUse, newNick)
 			return
 		}
