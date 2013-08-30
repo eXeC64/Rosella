@@ -56,6 +56,17 @@ func main() {
 
 	tlsConfig := new(tls.Config)
 
+	tlsConfig.PreferServerCipherSuites = true
+	tlsConfig.CipherSuites = []uint16{
+		tls.TLS_ECDHE_RSA_WITH_RC4_128_SHA,
+		tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_RSA_WITH_RC4_128_SHA,
+		tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_256_CBC_SHA}
+
 	cert, err := tls.LoadX509KeyPair(*tlsCertFile, *tlsKeyFile)
 	if err != nil {
 		log.Printf("Error loading tls certificate and key files.")
