@@ -214,10 +214,8 @@ func (s *Server) handleEvent(e Event) {
 			return
 		}
 
-		channelName := args[0]
-
 		if len(args) == 1 {
-			e.client.reply(rplTopic, channelName, channel.topic)
+			e.client.reply(rplTopic, channel.name, channel.topic)
 			return
 		}
 
@@ -230,7 +228,7 @@ func (s *Server) handleEvent(e Event) {
 		if args[1] == ":" {
 			channel.topic = ""
 			for _, client := range channel.clientMap {
-				client.reply(rplNoTopic, channelName)
+				client.reply(rplNoTopic, channel.name)
 			}
 		} else {
 			topic := strings.Join(args[1:], " ")
@@ -238,7 +236,7 @@ func (s *Server) handleEvent(e Event) {
 			channel.topic = topic
 
 			for _, client := range channel.clientMap {
-				client.reply(rplTopic, channelName, channel.topic)
+				client.reply(rplTopic, channel.name, channel.topic)
 			}
 		}
 
