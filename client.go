@@ -171,6 +171,8 @@ func (c *Client) reply(code replyCode, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 324 %s %s %s %s", c.server.name, c.nick, args[0], args[1], args[2])
 	case rplKick:
 		c.outputChan <- fmt.Sprintf(":%s KICK %s %s %s", args[0], args[1], args[2], args[3])
+	case rplInfo:
+		c.outputChan <- fmt.Sprintf(":%s 371 %s :%s", c.server.name, c.nick, args[0])
 	case errMoreArgs:
 		c.outputChan <- fmt.Sprintf(":%s 461 %s :Not enough params", c.server.name, c.nick)
 	case errNoNick:

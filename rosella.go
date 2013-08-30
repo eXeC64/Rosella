@@ -109,6 +109,7 @@ const (
 	rplOper
 	rplChannelModeIs
 	rplKick
+	rplInfo
 	errMoreArgs
 	errNoNick
 	errInvalidNick
