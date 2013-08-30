@@ -80,13 +80,13 @@ func (c *Client) joinChannel(channelName string) {
 	c.channelMap[channelKey] = channel
 
 	for _, client := range channel.clientMap {
-		client.reply(rplJoin, c.nick, channelName)
+		client.reply(rplJoin, c.nick, channel.name)
 	}
 
 	if channel.topic != "" {
-		c.reply(rplTopic, channelName, channel.topic)
+		c.reply(rplTopic, channel.name, channel.topic)
 	} else {
-		c.reply(rplNoTopic, channelName)
+		c.reply(rplNoTopic, channel.name)
 	}
 
 	nicks := make([]string, 0, 100)
@@ -117,7 +117,7 @@ func (c *Client) partChannel(channelName, reason string) {
 
 	//Notify clients of the part
 	for _, client := range channel.clientMap {
-		client.reply(rplPart, c.nick, channelName, reason)
+		client.reply(rplPart, c.nick, channel.name, reason)
 	}
 
 	delete(channel.clientMap, strings.ToLower(c.nick))
