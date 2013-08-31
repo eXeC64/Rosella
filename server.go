@@ -476,9 +476,9 @@ func (s *Server) handleEvent(e Event) {
 
 		for _, client := range channel.clientMap {
 			if hasClient {
-				client.reply(rplChannelModeIs, args[0], args[1], targetClient.nick)
+				client.reply(rplChannelModeIs, channel.name, args[1], targetClient.nick)
 			} else {
-				client.reply(rplChannelModeIs, args[0], args[1], "")
+				client.reply(rplChannelModeIs, channel.name, args[1], "")
 			}
 		}
 
