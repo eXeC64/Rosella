@@ -323,12 +323,14 @@ func (s *Server) handleEvent(e Event) {
 
 		reason := strings.Join(args[1:], " ")
 
-		if client, exists := s.clientMap[strings.ToLower(nick)]; exists {
-			client.reply(rplKill, e.client.nick, reason)
-			client.disconnect()
-		} else {
+		client, exists := s.clientMap[strings.ToLower(nick)]
+		if !exists {
 			e.client.reply(errNoSuchNick, nick)
+			return
 		}
+
+		client.reply(rplKill, e.client.nick, reason)
+		client.disconnect()
 
 	case command == "KICK":
 		if e.client.registered == false {
