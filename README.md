@@ -32,6 +32,7 @@ The following channel modes are supported:
 
 The following irc commands are supported:
 
+* INFO
 * JOIN
 * KICK
 * KILL
