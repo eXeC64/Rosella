@@ -64,6 +64,8 @@ func (s *Server) handleEvent(e Event) {
 	switch {
 	case command == "INFO":
 		e.client.reply(rplInfo, "Rosella IRCD github.com/eXeC64/Rosella")
+	case command == "VERSION":
+		e.client.reply(rplVersion, VERSION)
 	case command == "NICK":
 		if len(args) < 1 {
 			e.client.reply(errNoNick)

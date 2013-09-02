@@ -2,6 +2,10 @@ package main
 
 import "net"
 
+const (
+	VERSION = "1.0.0"
+)
+
 type Server struct {
 	eventChan   chan Event
 	running     bool
@@ -110,6 +114,7 @@ const (
 	rplChannelModeIs
 	rplKick
 	rplInfo
+	rplVersion
 	errMoreArgs
 	errNoNick
 	errInvalidNick

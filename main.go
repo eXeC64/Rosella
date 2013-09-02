@@ -20,7 +20,7 @@ func main() {
 
 	flag.Parse()
 
-	log.Printf("Rosella Initialising.")
+	log.Printf("Rosella v%s Initialising.", VERSION)
 
 	//Init rosella itself
 	server := NewServer()
