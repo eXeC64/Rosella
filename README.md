@@ -10,11 +10,10 @@ Rosella is intended to provide a portable, light-weight, near-zero-conf
 ircd capable of handling many simultaneous connections, whilst providing
 as much privacy for its users as possible.
 
-Rosella is *not* production ready, or recommended for large-scale usage.
-
-An x.509 key and certificate are required to open a TLS listener.
-Proper key handling and certificate checking is the responsibility of the
-users. Rosella cannot protect you from stupidity or untrustworthy CA's.
+Rosella *only* communicates with clients over SSL/TLS connections, therefore an
+x.509 certificate and private key are required for operation. Proper key
+handling and certificate checking is the responsibility of the users. Rosella
+cannot protect you from stupidity or untrustworthy CA's.
 
 Features
 --------
@@ -45,6 +44,7 @@ The following irc commands are supported:
 * QUIT
 * TOPIC
 * USER
+* VERSION
 
 Download
 --------
