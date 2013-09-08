@@ -175,6 +175,13 @@ func (c *Client) reply(code replyCode, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 371 %s :%s", c.server.name, c.nick, args[0])
 	case rplVersion:
 		c.outputChan <- fmt.Sprintf(":%s 351 %s %s", c.server.name, c.nick, args[0])
+	case rplMOTD:
+		c.outputChan <- fmt.Sprintf(":%s 375 %s", c.server.name, c.nick)
+		for i := 0; i < len(args[0]); i += 80 {
+			line := args[0][i : i+80]
+			c.outputChan <- fmt.Sprintf(":%s 372 %s %s", c.server.name, c.nick, line)
+		}
+		c.outputChan <- fmt.Sprintf(":%s 376 %s", c.server.name, c.nick)
 	case errMoreArgs:
 		c.outputChan <- fmt.Sprintf(":%s 461 %s :Not enough params", c.server.name, c.nick)
 	case errNoNick:
