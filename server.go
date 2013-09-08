@@ -48,27 +48,39 @@ func (s *Server) handleEvent(e Event) {
 			log.Println(err)
 		}
 	}(e)
-	fields := strings.Fields(e.input)
 
-	if len(fields) < 1 {
-		return
+	switch e.event {
+	case connected:
+		//Client connected
+	case disconnected:
+		//Client disconnected
+	case command:
+		//Client send a command
+		fields := strings.Fields(e.input)
+		if len(fields) < 1 {
+			return
+		}
+
+		if strings.HasPrefix(fields[0], ":") {
+			fields = fields[1:]
+		}
+		command := strings.ToUpper(fields[0])
+		args := fields[1:]
+
+		s.handleCommand(e.client, command, args)
 	}
+}
 
-	if strings.HasPrefix(fields[0], ":") {
-		fields = fields[1:]
-	}
+func (s *Server) handleCommand(client *Client, command string, args []string) {
 
-	command := strings.ToUpper(fields[0])
-	args := fields[1:]
-
-	switch {
-	case command == "INFO":
-		e.client.reply(rplInfo, "Rosella IRCD github.com/eXeC64/Rosella")
-	case command == "VERSION":
-		e.client.reply(rplVersion, VERSION)
-	case command == "NICK":
+	switch command {
+	case "INFO":
+		client.reply(rplInfo, "Rosella IRCD github.com/eXeC64/Rosella")
+	case "VERSION":
+		client.reply(rplVersion, VERSION)
+	case "NICK":
 		if len(args) < 1 {
-			e.client.reply(errNoNick)
+			client.reply(errNoNick)
 			return
 		}
 
@@ -76,47 +88,47 @@ func (s *Server) handleEvent(e Event) {
 
 		//Check newNick is of valid formatting (regex)
 		if nickRegexp.MatchString(newNick) == false {
-			e.client.reply(errInvalidNick, newNick)
+			client.reply(errInvalidNick, newNick)
 			return
 		}
 
 		if _, exists := s.clientMap[strings.ToLower(newNick)]; exists {
-			e.client.reply(errNickInUse, newNick)
+			client.reply(errNickInUse, newNick)
 			return
 		}
 
 		//Protect the server name from being used
 		if strings.ToLower(newNick) == strings.ToLower(s.name) {
-			e.client.reply(errNickInUse, newNick)
+			client.reply(errNickInUse, newNick)
 			return
 		}
 
-		e.client.setNick(newNick)
+		client.setNick(newNick)
 
-	case command == "USER":
-		if e.client.nick == "" {
-			e.client.reply(rplKill, "Your nickname is already being used")
-			e.client.disconnect()
+	case "USER":
+		if client.nick == "" {
+			client.reply(rplKill, "Your nickname is already being used")
+			client.disconnect()
 		} else {
-			e.client.reply(rplWelcome)
-			e.client.registered = true
+			client.reply(rplWelcome)
+			client.registered = true
 		}
 
-	case command == "JOIN":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "JOIN":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
 		if len(args) < 1 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
 		if args[0] == "0" {
 			//Quit all channels
-			for channel := range e.client.channelMap {
-				e.client.partChannel(channel, "Disconnecting")
+			for channel := range client.channelMap {
+				client.partChannel(channel, "Disconnecting")
 			}
 			return
 		}
@@ -125,18 +137,18 @@ func (s *Server) handleEvent(e Event) {
 		for _, channel := range channels {
 			//Join the channel if it's valid
 			if channelRegexp.Match([]byte(channel)) {
-				e.client.joinChannel(channel)
+				client.joinChannel(channel)
 			}
 		}
 
-	case command == "PART":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "PART":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
 		if len(args) < 1 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
@@ -146,18 +158,18 @@ func (s *Server) handleEvent(e Event) {
 		for _, channel := range channels {
 			//Part the channel if it's valid
 			if channelRegexp.Match([]byte(channel)) {
-				e.client.partChannel(channel, reason)
+				client.partChannel(channel, reason)
 			}
 		}
 
-	case command == "PRIVMSG":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "PRIVMSG":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
 		if len(args) < 2 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
@@ -168,64 +180,64 @@ func (s *Server) handleEvent(e Event) {
 
 		if chanExists {
 			if channel.mode.noExternal {
-				if _, inChannel := channel.clientMap[strings.ToLower(e.client.nick)]; !inChannel {
+				if _, inChannel := channel.clientMap[strings.ToLower(client.nick)]; !inChannel {
 					//Not in channel, not allowed to send
-					e.client.reply(errCannotSend, args[0])
+					client.reply(errCannotSend, args[0])
 					return
 				}
 			}
 			if channel.mode.moderated {
-				clientMode := channel.modeMap[strings.ToLower(e.client.nick)]
+				clientMode := channel.modeMap[strings.ToLower(client.nick)]
 				if !clientMode.operator && !clientMode.voice {
 					//It's moderated and we're not +v or +o, do nothing
-					e.client.reply(errCannotSend, args[0])
+					client.reply(errCannotSend, args[0])
 					return
 				}
 			}
 			for _, c := range channel.clientMap {
-				if c != e.client {
-					c.reply(rplMsg, e.client.nick, args[0], message)
+				if c != client {
+					c.reply(rplMsg, client.nick, args[0], message)
 				}
 			}
 		} else if clientExists {
-			client.reply(rplMsg, e.client.nick, client.nick, message)
+			client.reply(rplMsg, client.nick, client.nick, message)
 		} else {
-			e.client.reply(errNoSuchNick, args[0])
+			client.reply(errNoSuchNick, args[0])
 		}
 
-	case command == "QUIT":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "QUIT":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
-		e.client.disconnect()
+		client.disconnect()
 
-	case command == "TOPIC":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "TOPIC":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
 		if len(args) < 1 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
 		channel, exists := s.channelMap[strings.ToLower(args[0])]
 		if exists == false {
-			e.client.reply(errNoSuchNick, args[0])
+			client.reply(errNoSuchNick, args[0])
 			return
 		}
 
 		if len(args) == 1 {
-			e.client.reply(rplTopic, channel.name, channel.topic)
+			client.reply(rplTopic, channel.name, channel.topic)
 			return
 		}
 
-		clientMode := channel.modeMap[strings.ToLower(e.client.nick)]
+		clientMode := channel.modeMap[strings.ToLower(client.nick)]
 		if channel.mode.topicLocked && !clientMode.operator {
-			e.client.reply(errNoPriv)
+			client.reply(errNoPriv)
 			return
 		}
 
@@ -244,9 +256,9 @@ func (s *Server) handleEvent(e Event) {
 			}
 		}
 
-	case command == "LIST":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "LIST":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
@@ -255,7 +267,7 @@ func (s *Server) handleEvent(e Event) {
 
 			for channelName, channel := range s.channelMap {
 				if channel.mode.secret {
-					if _, inChannel := channel.clientMap[strings.ToLower(e.client.nick)]; !inChannel {
+					if _, inChannel := channel.clientMap[strings.ToLower(client.nick)]; !inChannel {
 						//Not in the channel, skip
 						continue
 					}
@@ -264,7 +276,7 @@ func (s *Server) handleEvent(e Event) {
 				chanList = append(chanList, listItem)
 			}
 
-			e.client.reply(rplList, chanList...)
+			client.reply(rplList, chanList...)
 
 		} else {
 			channels := strings.Split(args[0], ",")
@@ -277,16 +289,16 @@ func (s *Server) handleEvent(e Event) {
 				}
 			}
 
-			e.client.reply(rplList, chanList...)
+			client.reply(rplList, chanList...)
 		}
-	case command == "OPER":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "OPER":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
 		if len(args) < 2 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
@@ -298,26 +310,26 @@ func (s *Server) handleEvent(e Event) {
 			io.WriteString(h, password)
 			pass := fmt.Sprintf("%x", h.Sum(nil))
 			if hashedPassword == pass {
-				e.client.operator = true
-				e.client.reply(rplOper)
+				client.operator = true
+				client.reply(rplOper)
 				return
 			}
 		}
-		e.client.reply(errPassword)
+		client.reply(errPassword)
 
-	case command == "KILL":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "KILL":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
-		if e.client.operator == false {
-			e.client.reply(errNoPriv)
+		if client.operator == false {
+			client.reply(errNoPriv)
 			return
 		}
 
 		if len(args) < 1 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
@@ -327,21 +339,21 @@ func (s *Server) handleEvent(e Event) {
 
 		client, exists := s.clientMap[strings.ToLower(nick)]
 		if !exists {
-			e.client.reply(errNoSuchNick, nick)
+			client.reply(errNoSuchNick, nick)
 			return
 		}
 
-		client.reply(rplKill, e.client.nick, reason)
+		client.reply(rplKill, client.nick, reason)
 		client.disconnect()
 
-	case command == "KICK":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "KICK":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
 		if len(args) < 2 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
@@ -350,19 +362,19 @@ func (s *Server) handleEvent(e Event) {
 
 		channel, channelExists := s.channelMap[channelKey]
 		if !channelExists {
-			e.client.reply(errNoSuchNick, args[0])
+			client.reply(errNoSuchNick, args[0])
 			return
 		}
 
 		target, targetExists := channel.clientMap[targetKey]
 		if !targetExists {
-			e.client.reply(errNoSuchNick, args[1])
+			client.reply(errNoSuchNick, args[1])
 			return
 		}
 
-		clientMode := channel.modeMap[e.client.key]
-		if !clientMode.operator && !e.client.operator {
-			e.client.reply(errNoPriv)
+		clientMode := channel.modeMap[client.key]
+		if !clientMode.operator && !client.operator {
+			client.reply(errNoPriv)
 			return
 		}
 
@@ -370,21 +382,21 @@ func (s *Server) handleEvent(e Event) {
 
 		//It worked
 		for _, client := range channel.clientMap {
-			client.reply(rplKick, e.client.nick, channel.name, target.nick, reason)
+			client.reply(rplKick, client.nick, channel.name, target.nick, reason)
 		}
 
 		delete(channel.clientMap, targetKey)
 		delete(channel.modeMap, targetKey)
 		delete(target.channelMap, channelKey)
 
-	case command == "MODE":
-		if e.client.registered == false {
-			e.client.reply(errNotReg)
+	case "MODE":
+		if client.registered == false {
+			client.reply(errNotReg)
 			return
 		}
 
 		if len(args) < 1 {
-			e.client.reply(errMoreArgs)
+			client.reply(errMoreArgs)
 			return
 		}
 
@@ -392,23 +404,23 @@ func (s *Server) handleEvent(e Event) {
 
 		channel, channelExists := s.channelMap[channelKey]
 		if !channelExists {
-			e.client.reply(errNoSuchNick, args[0])
+			client.reply(errNoSuchNick, args[0])
 			return
 		}
 		mode := channel.mode
 
 		if len(args) == 1 {
 			//No more args, they just want the mode
-			e.client.reply(rplChannelModeIs, args[0], mode.String(), "")
+			client.reply(rplChannelModeIs, args[0], mode.String(), "")
 			return
 		}
 
-		if cm, ok := channel.modeMap[strings.ToLower(e.client.nick)]; !ok || !cm.operator {
+		if cm, ok := channel.modeMap[strings.ToLower(client.nick)]; !ok || !cm.operator {
 			//Not a channel operator.
 
 			//If they're not an irc operator either, they'll fail
-			if !e.client.operator {
-				e.client.reply(errNoPriv)
+			if !client.operator {
+				client.reply(errNoPriv)
 				return
 			}
 		}
@@ -485,6 +497,6 @@ func (s *Server) handleEvent(e Event) {
 		}
 
 	default:
-		e.client.reply(errUnknownCommand, command)
+		client.reply(errUnknownCommand, command)
 	}
 }

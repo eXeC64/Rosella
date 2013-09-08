@@ -28,9 +28,18 @@ type Client struct {
 	channelMap map[string]*Channel
 }
 
+type eventType int
+
+const (
+	connected eventType = iota
+	disconnected
+	command
+)
+
 type Event struct {
 	client *Client
 	input  string
+	event  eventType
 }
 
 type Channel struct {
