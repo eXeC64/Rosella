@@ -14,6 +14,7 @@ var (
 	ircAddress  = flag.String("irc-address", ":6697", "The address:port to bind to and listen for clients on")
 	serverName  = flag.String("irc-servername", "rosella", "Server name displayed to clients")
 	authFile    = flag.String("irc-authfile", "", "File containing usernames and passwords of operators.")
+	motdFile    = flag.String("irc-motdfile", "", "File container motd to display to clients.")
 )
 
 func main() {
@@ -50,6 +51,22 @@ func main() {
 				server.operatorMap[fields[0]] = fields[1]
 			}
 		}
+	}
+
+	if *motdFile != "" {
+		log.Printf("Loading motd file: %q", *motdFile)
+
+		f, err := os.Open(*motdFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		data := make([]byte, 1024)
+		size, err := f.Read(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		server.motd = string(data[:size])
 	}
 
 	go server.Run()
