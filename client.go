@@ -176,10 +176,15 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplVersion:
 		c.outputChan <- fmt.Sprintf(":%s 351 %s %s", c.server.name, c.nick, args[0])
 	case rplMOTD:
+		motd := args[0]
 		c.outputChan <- fmt.Sprintf(":%s 375 %s", c.server.name, c.nick)
-		for i := 0; i < len(args[0]); i += 80 {
-			line := args[0][i : i+80]
-			c.outputChan <- fmt.Sprintf(":%s 372 %s %s", c.server.name, c.nick, line)
+		for size := len(motd); size > 0; size = len(motd) {
+			if size <= 80 {
+				c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd)
+				break
+			}
+			c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd[:80])
+			motd = motd[80:]
 		}
 		c.outputChan <- fmt.Sprintf(":%s 376 %s", c.server.name, c.nick)
 	case errMoreArgs:
@@ -211,6 +216,8 @@ func (c *Client) clientThread() {
 	readSignalChan := make(chan signalCode, 3)
 	writeSignalChan := make(chan signalCode, 3)
 	writeChan := make(chan string, 100)
+
+	c.server.eventChan <- Event{client: c, event: connected}
 
 	go c.readThread(readSignalChan)
 	go c.writeThread(writeSignalChan, writeChan)

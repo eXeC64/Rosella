@@ -13,6 +13,7 @@ type Server struct {
 	clientMap   map[string]*Client  //Map of nicks → clients
 	channelMap  map[string]*Channel //Map of channel names → channels
 	operatorMap map[string]string   //Map of usernames → SHA1 hashed passwords
+	motd        string
 }
 
 type Client struct {

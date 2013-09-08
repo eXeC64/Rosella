@@ -20,7 +20,8 @@ func NewServer() *Server {
 		name:        "rosella",
 		clientMap:   make(map[string]*Client),
 		channelMap:  make(map[string]*Channel),
-		operatorMap: make(map[string]string)}
+		operatorMap: make(map[string]string),
+		motd:        "Welcome to IRC. Powered by Rosella."}
 }
 
 func (s *Server) Run() {
@@ -52,6 +53,7 @@ func (s *Server) handleEvent(e Event) {
 	switch e.event {
 	case connected:
 		//Client connected
+		e.client.reply(rplMOTD, s.motd)
 	case disconnected:
 		//Client disconnected
 	case command:
