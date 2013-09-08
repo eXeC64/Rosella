@@ -176,7 +176,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 		message := strings.Join(args[1:], " ")
 
 		channel, chanExists := s.channelMap[strings.ToLower(args[0])]
-		client, clientExists := s.clientMap[strings.ToLower(args[0])]
+		client2, clientExists := s.clientMap[strings.ToLower(args[0])]
 
 		if chanExists {
 			if channel.mode.noExternal {
@@ -200,7 +200,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 				}
 			}
 		} else if clientExists {
-			client.reply(rplMsg, client.nick, client.nick, message)
+			client.reply(rplMsg, client.nick, client2.nick, message)
 		} else {
 			client.reply(errNoSuchNick, args[0])
 		}
