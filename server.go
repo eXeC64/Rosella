@@ -45,7 +45,7 @@ func (s *Server) handleEvent(e Event) {
 	defer func(event Event) {
 		err := recover()
 		if err != nil {
-			log.Printf("Recovered from errer when handling event: %+v", event)
+			log.Printf("Recovered from error when handling event: %+v", event)
 			log.Println(err)
 		}
 	}(e)
