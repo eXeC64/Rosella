@@ -76,6 +76,8 @@ func (s *Server) handleEvent(e Event) {
 func (s *Server) handleCommand(client *Client, command string, args []string) {
 
 	switch command {
+	case "PING":
+		client.reply(rplPong)
 	case "INFO":
 		client.reply(rplInfo, "Rosella IRCD github.com/eXeC64/Rosella")
 	case "VERSION":

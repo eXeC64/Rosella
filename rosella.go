@@ -126,6 +126,7 @@ const (
 	rplInfo
 	rplVersion
 	rplMOTD
+	rplPong
 	errMoreArgs
 	errNoNick
 	errInvalidNick
