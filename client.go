@@ -152,7 +152,7 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplNames:
 		//TODO: break long lists up into multiple messages
 		c.outputChan <- fmt.Sprintf(":%s 353 %s = %s :%s", c.server.name, c.nick, args[0], args[1])
-		c.outputChan <- fmt.Sprintf(":%s 366 %s", c.server.name, c.nick)
+		c.outputChan <- fmt.Sprintf(":%s 366 %s %s :End of NAMES list", c.server.name, c.nick, args[0])
 	case rplNickChange:
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
 	case rplKill:
