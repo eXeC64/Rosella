@@ -177,7 +177,7 @@ func (c *Client) reply(code replyCode, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 351 %s %s", c.server.name, c.nick, args[0])
 	case rplMOTD:
 		motd := args[0]
-		c.outputChan <- fmt.Sprintf(":%s 375 %s", c.server.name, c.nick)
+		c.outputChan <- fmt.Sprintf(":%s 375 %s :- Message of the day - ", c.server.name, c.nick)
 		for size := len(motd); size > 0; size = len(motd) {
 			if size <= 80 {
 				c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd)
@@ -186,7 +186,7 @@ func (c *Client) reply(code replyCode, args ...string) {
 			c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd[:80])
 			motd = motd[80:]
 		}
-		c.outputChan <- fmt.Sprintf(":%s 376 %s", c.server.name, c.nick)
+		c.outputChan <- fmt.Sprintf(":%s 376 %s :End of MOTD Command", c.server.name, c.nick)
 	case errMoreArgs:
 		c.outputChan <- fmt.Sprintf(":%s 461 %s :Not enough params", c.server.name, c.nick)
 	case errNoNick:
