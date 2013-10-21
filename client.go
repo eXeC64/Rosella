@@ -160,7 +160,6 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplMsg:
 		c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", args[0], args[1], args[2])
 	case rplList:
-		c.outputChan <- fmt.Sprintf(":%s 321 %s", c.server.name, c.nick)
 		for _, listItem := range args {
 			c.outputChan <- fmt.Sprintf(":%s 322 %s %s", c.server.name, c.nick, listItem)
 		}
