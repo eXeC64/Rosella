@@ -111,7 +111,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 
 	case "USER":
 		if client.nick == "" {
-			client.reply(rplKill, "Your nickname is already being used")
+			client.reply(rplKill, "Your nickname is already being used", "")
 			client.disconnect()
 		} else {
 			client.reply(rplWelcome)
