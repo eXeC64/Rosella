@@ -1,9 +1,8 @@
 package main
 
 import (
-	"crypto/sha1"
 	"fmt"
-	"io"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net"
 	"regexp"
@@ -20,7 +19,7 @@ func NewServer() *Server {
 		name:        "rosella",
 		clientMap:   make(map[string]*Client),
 		channelMap:  make(map[string]*Channel),
-		operatorMap: make(map[string]string),
+		operatorMap: make(map[string][]byte),
 		motd:        "Welcome to IRC. Powered by Rosella."}
 }
 
@@ -315,10 +314,8 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 		password := args[1]
 
 		if hashedPassword, exists := s.operatorMap[username]; exists {
-			h := sha1.New()
-			io.WriteString(h, password)
-			pass := fmt.Sprintf("%x", h.Sum(nil))
-			if hashedPassword == pass {
+			//nil means the passwords matched
+			if err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password)); err == nil {
 				client.operator = true
 				client.reply(rplOper)
 				return

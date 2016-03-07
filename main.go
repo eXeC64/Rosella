@@ -49,7 +49,7 @@ func main() {
 			fields := strings.Fields(line)
 
 			if len(fields) == 2 {
-				server.operatorMap[fields[0]] = fields[1]
+				server.operatorMap[fields[0]] = []byte(fields[1])
 			}
 		}
 	}
