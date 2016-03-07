@@ -4,49 +4,41 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 	"time"
 )
 
 func (c *Client) setNick(nick string) {
-	if c.nick != "" {
-		delete(c.server.clientMap, c.key)
-		for _, channel := range c.channelMap {
-			delete(channel.clientMap, c.key)
-		}
-	}
-
 	//Set up new nick
 	oldNick := c.nick
+	oldKey := c.key
 	c.nick = nick
 	c.key = strings.ToLower(c.nick)
+
+	delete(c.server.clientMap, oldKey)
 	c.server.clientMap[c.key] = c
 
-	clients := make([]string, 0, 100)
-
+	//Update the relevant channels and notify everyone who can see us about our
+	//nick change
+	c.reply(rplNickChange, oldNick, c.nick)
+	visited := make(map[*Client]struct{}, 100)
 	for _, channel := range c.channelMap {
+		delete(channel.clientMap, oldKey)
+
+		for _, client := range channel.clientMap {
+			if _, skip := visited[client]; skip {
+				continue
+			}
+			client.reply(rplNickChange, oldNick, c.nick)
+			visited[client] = struct{}{}
+		}
+
+		//Insert the new nick after iterating through channel.clientMap to avoid
+		//sending a duplicate message to ourselves
 		channel.clientMap[c.key] = c
 
-		//Collect list of client nicks who can see us
-		for _, client := range channel.clientMap {
-			clients = append(clients, client.nick)
-		}
-	}
-
-	//By sorting the nicks and skipping duplicates we send each client one message
-	sort.Strings(clients)
-	prevNick := ""
-	for _, nick := range clients {
-		if nick == prevNick {
-			continue
-		}
-		prevNick = nick
-
-		client, exists := c.server.clientMap[strings.ToLower(nick)]
-		if exists {
-			client.reply(rplNickChange, oldNick, c.nick)
-		}
+		channel.modeMap[c.key] = channel.modeMap[oldKey]
+		delete(channel.modeMap, oldKey)
 	}
 }
 
