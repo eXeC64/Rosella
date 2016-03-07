@@ -140,7 +140,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 		channels := strings.Split(args[0], ",")
 		for _, channel := range channels {
 			//Join the channel if it's valid
-			if channelRegexp.Match([]byte(channel)) {
+			if channelRegexp.MatchString(channel) {
 				client.joinChannel(channel)
 			}
 		}
@@ -161,7 +161,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 		channels := strings.Split(args[0], ",")
 		for _, channel := range channels {
 			//Part the channel if it's valid
-			if channelRegexp.Match([]byte(channel)) {
+			if channelRegexp.MatchString(channel) {
 				client.partChannel(channel, reason)
 			}
 		}
