@@ -106,7 +106,7 @@ func (c *Client) partChannel(channelName, reason string) {
 		return
 	}
 
-	if _, inChannel := channel.clientMap[strings.ToLower(c.nick)]; inChannel == false {
+	if _, inChannel := channel.clientMap[c.key]; inChannel == false {
 		//Client isn't in this channel, do nothing
 		return
 	}
@@ -117,8 +117,8 @@ func (c *Client) partChannel(channelName, reason string) {
 	}
 
 	delete(c.channelMap, channelKey)
-	delete(channel.modeMap, strings.ToLower(c.nick))
-	delete(channel.clientMap, strings.ToLower(c.nick))
+	delete(channel.modeMap, c.key)
+	delete(channel.clientMap, c.key)
 
 	if len(channel.clientMap) == 0 {
 		delete(c.server.channelMap, channelKey)
@@ -227,7 +227,7 @@ func (c *Client) clientThread() {
 			c.partChannel(channelName, "Disconnecting")
 		}
 
-		delete(c.server.clientMap, strings.ToLower(c.nick))
+		delete(c.server.clientMap, c.key)
 
 		c.connection.Close()
 	}()

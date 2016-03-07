@@ -184,14 +184,14 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 
 		if chanExists {
 			if channel.mode.noExternal {
-				if _, inChannel := channel.clientMap[strings.ToLower(client.nick)]; !inChannel {
+				if _, inChannel := channel.clientMap[client.key]; !inChannel {
 					//Not in channel, not allowed to send
 					client.reply(errCannotSend, args[0])
 					return
 				}
 			}
 			if channel.mode.moderated {
-				clientMode := channel.modeMap[strings.ToLower(client.nick)]
+				clientMode := channel.modeMap[client.key]
 				if !clientMode.operator && !clientMode.voice {
 					//It's moderated and we're not +v or +o, do nothing
 					client.reply(errCannotSend, args[0])
@@ -239,7 +239,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 			return
 		}
 
-		clientMode := channel.modeMap[strings.ToLower(client.nick)]
+		clientMode := channel.modeMap[client.key]
 		if channel.mode.topicLocked && !clientMode.operator {
 			client.reply(errNoPriv)
 			return
@@ -271,7 +271,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 
 			for channelName, channel := range s.channelMap {
 				if channel.mode.secret {
-					if _, inChannel := channel.clientMap[strings.ToLower(client.nick)]; !inChannel {
+					if _, inChannel := channel.clientMap[client.key]; !inChannel {
 						//Not in the channel, skip
 						continue
 					}
@@ -419,7 +419,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 			return
 		}
 
-		if cm, ok := channel.modeMap[strings.ToLower(client.nick)]; !ok || !cm.operator {
+		if cm, ok := channel.modeMap[client.key]; !ok || !cm.operator {
 			//Not a channel operator.
 
 			//If they're not an irc operator either, they'll fail
