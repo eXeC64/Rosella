@@ -117,6 +117,7 @@ func (c *Client) partChannel(channelName, reason string) {
 	}
 
 	delete(c.channelMap, channelKey)
+	delete(channel.modeMap, strings.ToLower(c.nick))
 	delete(channel.clientMap, strings.ToLower(c.nick))
 
 	if len(channel.clientMap) == 0 {
