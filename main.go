@@ -39,6 +39,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		f.Close()
 
 		lines := strings.Split(string(data[:size]), "\n")
 		for _, line := range lines {
@@ -65,6 +66,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		f.Close()
 
 		server.motd = string(data[:size])
 	}
