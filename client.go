@@ -56,10 +56,14 @@ func (c *Client) joinChannel(channelName string) {
 	channelKey := strings.ToLower(channelName)
 	channel, exists := c.server.channelMap[channelKey]
 	if exists == false {
+		mode := ChannelMode{secret: true,
+			topicLocked: true,
+			noExternal:  true}
 		channel = &Channel{name: channelName,
 			topic:     "",
 			clientMap: make(map[string]*Client),
-			modeMap:   make(map[string]*ClientMode)}
+			modeMap:   make(map[string]*ClientMode),
+			mode:      mode}
 		c.server.channelMap[channelKey] = channel
 		newChannel = true
 	}
