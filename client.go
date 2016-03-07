@@ -124,10 +124,11 @@ func (c *Client) partChannel(channelName, reason string) {
 		client.reply(rplPart, c.nick, channel.name, reason)
 	}
 
+	delete(c.channelMap, channelKey)
 	delete(channel.clientMap, strings.ToLower(c.nick))
 
 	if len(channel.clientMap) == 0 {
-		delete(c.channelMap, channelKey)
+		delete(c.server.channelMap, channelKey)
 	}
 }
 
