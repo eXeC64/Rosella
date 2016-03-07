@@ -272,7 +272,9 @@ func (c *Client) readThread(signalChan chan signalCode) {
 			}
 
 			rawLines := buf[:ln]
-			lines := bytes.Split(rawLines, []byte("\r\n"))
+			rawLines = bytes.Replace(rawLines, []byte("\r\n"), []byte("\n"), -1)
+			rawLines = bytes.Replace(rawLines, []byte("\r"), []byte("\n"), -1)
+			lines := bytes.Split(rawLines, []byte("\n"))
 			for _, line := range lines {
 				if len(line) > 0 {
 					c.server.eventChan <- Event{client: c, event: command, input: string(line)}
