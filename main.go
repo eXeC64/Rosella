@@ -71,8 +71,6 @@ func main() {
 		server.motd = string(data[:size])
 	}
 
-	go server.Run()
-
 	tlsConfig := new(tls.Config)
 
 	tlsConfig.PreferServerCipherSuites = true
@@ -104,6 +102,8 @@ func main() {
 		log.Printf(err.Error())
 		return
 	}
+
+	go server.Run()
 
 	log.Printf("Listening on %s", *ircAddress)
 
