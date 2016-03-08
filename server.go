@@ -204,7 +204,7 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 				}
 			}
 		} else if clientExists {
-			client.reply(rplMsg, client.nick, client2.nick, message)
+			client2.reply(rplMsg, client.nick, client2.nick, message)
 		} else {
 			client.reply(errNoSuchNick, args[0])
 		}
