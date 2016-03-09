@@ -85,7 +85,9 @@ func (c *Client) joinChannel(channelName string) {
 		c.reply(rplNoTopic, channel.name)
 	}
 
-	nicks := make([]string, 0, 100)
+	//The capacity sets the max number of nicks to send per message
+	nicks := make([]string, 0, 128)
+
 	for _, client := range channel.clientMap {
 		prefix := ""
 
@@ -93,10 +95,19 @@ func (c *Client) joinChannel(channelName string) {
 			prefix = mode.Prefix()
 		}
 
+		if len(nicks) >= cap(nicks) {
+			c.reply(rplNames, channelName, strings.Join(nicks, " "))
+			nicks = nicks[:0]
+		}
+
 		nicks = append(nicks, fmt.Sprintf("%s%s", prefix, client.nick))
 	}
 
-	c.reply(rplNames, channelName, strings.Join(nicks, " "))
+	if len(nicks) > 0 {
+		c.reply(rplNames, channelName, strings.Join(nicks, " "))
+	}
+
+	c.reply(rplEndOfNames, channelName)
 }
 
 func (c *Client) partChannel(channelName, reason string) {
@@ -148,8 +159,8 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplNoTopic:
 		c.outputChan <- fmt.Sprintf(":%s 331 %s %s :No topic is set", c.server.name, c.nick, args[0])
 	case rplNames:
-		//TODO: break long lists up into multiple messages
 		c.outputChan <- fmt.Sprintf(":%s 353 %s = %s :%s", c.server.name, c.nick, args[0], args[1])
+	case rplEndOfNames:
 		c.outputChan <- fmt.Sprintf(":%s 366 %s %s :End of NAMES list", c.server.name, c.nick, args[0])
 	case rplNickChange:
 		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])

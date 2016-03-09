@@ -116,6 +116,7 @@ const (
 	rplTopic
 	rplNoTopic
 	rplNames
+	rplEndOfNames
 	rplNickChange
 	rplKill
 	rplMsg
