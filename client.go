@@ -136,101 +136,119 @@ func (c *Client) partChannel(channelName, reason string) {
 	}
 }
 
-func (c *Client) disconnect() {
-	c.connected = false
-	c.signalChan <- signalStop
-}
-
 //Send a reply to a user with the code specified
 func (c *Client) reply(code replyCode, args ...string) {
-	if c.connected == false {
+	if c.connected() == false {
 		return
 	}
 
 	switch code {
 	case rplWelcome:
-		c.outputChan <- fmt.Sprintf(":%s 001 %s :Welcome to %s", c.server.name, c.nick, c.server.name)
+		c.send(":%s 001 %s :Welcome to %s", c.server.name, c.nick, c.server.name)
 	case rplJoin:
-		c.outputChan <- fmt.Sprintf(":%s JOIN %s", args[0], args[1])
+		c.send(":%s JOIN %s", args[0], args[1])
 	case rplPart:
-		c.outputChan <- fmt.Sprintf(":%s PART %s %s", args[0], args[1], args[2])
+		c.send(":%s PART %s %s", args[0], args[1], args[2])
 	case rplTopic:
-		c.outputChan <- fmt.Sprintf(":%s 332 %s %s :%s", c.server.name, c.nick, args[0], args[1])
+		c.send(":%s 332 %s %s :%s", c.server.name, c.nick, args[0], args[1])
 	case rplNoTopic:
-		c.outputChan <- fmt.Sprintf(":%s 331 %s %s :No topic is set", c.server.name, c.nick, args[0])
+		c.send(":%s 331 %s %s :No topic is set", c.server.name, c.nick, args[0])
 	case rplNames:
-		c.outputChan <- fmt.Sprintf(":%s 353 %s = %s :%s", c.server.name, c.nick, args[0], args[1])
+		c.send(":%s 353 %s = %s :%s", c.server.name, c.nick, args[0], args[1])
 	case rplEndOfNames:
-		c.outputChan <- fmt.Sprintf(":%s 366 %s %s :End of NAMES list", c.server.name, c.nick, args[0])
+		c.send(":%s 366 %s %s :End of NAMES list", c.server.name, c.nick, args[0])
 	case rplNickChange:
-		c.outputChan <- fmt.Sprintf(":%s NICK %s", args[0], args[1])
+		c.send(":%s NICK %s", args[0], args[1])
 	case rplKill:
-		c.outputChan <- fmt.Sprintf(":%s KILL %s A %s", args[0], c.nick, args[1])
+		c.send(":%s KILL %s A %s", args[0], c.nick, args[1])
 	case rplMsg:
-		c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", args[0], args[1], args[2])
+		c.send(":%s PRIVMSG %s %s", args[0], args[1], args[2])
 	case rplList:
 		for _, listItem := range args {
-			c.outputChan <- fmt.Sprintf(":%s 322 %s %s", c.server.name, c.nick, listItem)
+			c.send(":%s 322 %s %s", c.server.name, c.nick, listItem)
 		}
-		c.outputChan <- fmt.Sprintf(":%s 323 %s", c.server.name, c.nick)
+		c.send(":%s 323 %s", c.server.name, c.nick)
 	case rplOper:
-		c.outputChan <- fmt.Sprintf(":%s 381 %s :You are now an operator", c.server.name, c.nick)
+		c.send(":%s 381 %s :You are now an operator", c.server.name, c.nick)
 	case rplChannelModeIs:
-		c.outputChan <- fmt.Sprintf(":%s 324 %s %s %s %s", c.server.name, c.nick, args[0], args[1], args[2])
+		c.send(":%s 324 %s %s %s %s", c.server.name, c.nick, args[0], args[1], args[2])
 	case rplKick:
-		c.outputChan <- fmt.Sprintf(":%s KICK %s %s %s", args[0], args[1], args[2], args[3])
+		c.send(":%s KICK %s %s %s", args[0], args[1], args[2], args[3])
 	case rplInfo:
-		c.outputChan <- fmt.Sprintf(":%s 371 %s :%s", c.server.name, c.nick, args[0])
+		c.send(":%s 371 %s :%s", c.server.name, c.nick, args[0])
 	case rplVersion:
-		c.outputChan <- fmt.Sprintf(":%s 351 %s %s", c.server.name, c.nick, args[0])
+		c.send(":%s 351 %s %s", c.server.name, c.nick, args[0])
 	case rplMOTD:
 		motd := args[0]
-		c.outputChan <- fmt.Sprintf(":%s 375 %s :- Message of the day - ", c.server.name, c.nick)
+		c.send(":%s 375 %s :- Message of the day - ", c.server.name, c.nick)
 		for size := len(motd); size > 0; size = len(motd) {
 			if size <= 80 {
-				c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd)
+				c.send(":%s 372 %s :- %s", c.server.name, c.nick, motd)
 				break
 			}
-			c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd[:80])
+			c.send(":%s 372 %s :- %s", c.server.name, c.nick, motd[:80])
 			motd = motd[80:]
 		}
-		c.outputChan <- fmt.Sprintf(":%s 376 %s :End of MOTD Command", c.server.name, c.nick)
+		c.send(":%s 376 %s :End of MOTD Command", c.server.name, c.nick)
 	case rplPong:
-		c.outputChan <- fmt.Sprintf(":%s PONG %s %s", c.server.name, c.nick, c.server.name)
+		c.send(":%s PONG %s %s", c.server.name, c.nick, c.server.name)
 	case errMoreArgs:
-		c.outputChan <- fmt.Sprintf(":%s 461 %s :Not enough params", c.server.name, c.nick)
+		c.send(":%s 461 %s :Not enough params", c.server.name, c.nick)
 	case errNoNick:
-		c.outputChan <- fmt.Sprintf(":%s 431 %s :No nickname given", c.server.name, c.nick)
+		c.send(":%s 431 %s :No nickname given", c.server.name, c.nick)
 	case errInvalidNick:
-		c.outputChan <- fmt.Sprintf(":%s 432 %s %s :Erronenous nickname", c.server.name, c.nick, args[0])
+		c.send(":%s 432 %s %s :Erronenous nickname", c.server.name, c.nick, args[0])
 	case errNickInUse:
-		c.outputChan <- fmt.Sprintf(":%s 433 %s %s :Nick already in use", c.server.name, c.nick, args[0])
+		c.send(":%s 433 %s %s :Nick already in use", c.server.name, c.nick, args[0])
 	case errAlreadyReg:
-		c.outputChan <- fmt.Sprintf(":%s 462 :You need a valid nick first", c.server.name)
+		c.send(":%s 462 :You need a valid nick first", c.server.name)
 	case errNoSuchNick:
-		c.outputChan <- fmt.Sprintf(":%s 401 %s %s :No such nick/channel", c.server.name, c.nick, args[0])
+		c.send(":%s 401 %s %s :No such nick/channel", c.server.name, c.nick, args[0])
 	case errUnknownCommand:
-		c.outputChan <- fmt.Sprintf(":%s 421 %s %s :Unknown command", c.server.name, c.nick, args[0])
+		c.send(":%s 421 %s %s :Unknown command", c.server.name, c.nick, args[0])
 	case errNotReg:
-		c.outputChan <- fmt.Sprintf(":%s 451 :You have not registered", c.server.name)
+		c.send(":%s 451 :You have not registered", c.server.name)
 	case errPassword:
-		c.outputChan <- fmt.Sprintf(":%s 464 %s :Error, password incorrect", c.server.name, c.nick)
+		c.send(":%s 464 %s :Error, password incorrect", c.server.name, c.nick)
 	case errNoPriv:
-		c.outputChan <- fmt.Sprintf(":%s 481 %s :Permission denied", c.server.name, c.nick)
+		c.send(":%s 481 %s :Permission denied", c.server.name, c.nick)
 	case errCannotSend:
-		c.outputChan <- fmt.Sprintf(":%s 404 %s %s :Cannot send to channel", c.server.name, c.nick, args[0])
+		c.send(":%s 404 %s %s :Cannot send to channel", c.server.name, c.nick, args[0])
+	}
+}
+
+func (c *Client) connected() bool {
+	select {
+	case <-c.stopChan:
+		return false
+	default:
+		return true
+	}
+}
+
+func (c *Client) disconnect() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	if c.connected() == true {
+		close(c.stopChan)
+	}
+}
+
+func (c *Client) send(format string, args ...interface{}) {
+	select {
+	case <-c.stopChan:
+	case c.outputChan <- fmt.Sprintf(format, args...):
 	}
 }
 
 func (c *Client) clientThread() {
-	readSignalChan := make(chan signalCode, 3)
-	writeSignalChan := make(chan signalCode, 3)
 	writeChan := make(chan string, 100)
 
 	c.server.eventChan <- Event{client: c, event: connected}
 
-	go c.readThread(readSignalChan)
-	go c.writeThread(writeSignalChan, writeChan)
+	go c.readThread()
+	go c.writeThread(writeChan)
 
 	defer func() {
 		//Part from all channels
@@ -245,12 +263,8 @@ func (c *Client) clientThread() {
 
 	for {
 		select {
-		case signal := <-c.signalChan:
-			if signal == signalStop {
-				readSignalChan <- signalStop
-				writeSignalChan <- signalStop
-				return
-			}
+		case <-c.stopChan:
+			return
 		case line := <-c.outputChan:
 			select {
 			case writeChan <- line:
@@ -263,13 +277,11 @@ func (c *Client) clientThread() {
 
 }
 
-func (c *Client) readThread(signalChan chan signalCode) {
+func (c *Client) readThread() {
 	for {
 		select {
-		case signal := <-signalChan:
-			if signal == signalStop {
-				return
-			}
+		case <-c.stopChan:
+			return
 		default:
 			c.connection.SetReadDeadline(time.Now().Add(time.Second * 3))
 			buf := make([]byte, 512)
@@ -295,13 +307,11 @@ func (c *Client) readThread(signalChan chan signalCode) {
 	}
 }
 
-func (c *Client) writeThread(signalChan chan signalCode, outputChan chan string) {
+func (c *Client) writeThread(outputChan chan string) {
 	for {
 		select {
-		case signal := <-signalChan:
-			if signal == signalStop {
-				return
-			}
+		case <-c.stopChan:
+			return
 		case output := <-outputChan:
 			line := []byte(fmt.Sprintf("%s\r\n", output))
 

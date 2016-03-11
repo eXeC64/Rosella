@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"net"
+	"sync"
+)
 
 const (
 	VERSION = "1.1.1"
@@ -19,14 +22,14 @@ type Server struct {
 type Client struct {
 	server     *Server
 	connection net.Conn
-	signalChan chan signalCode
+	stopChan   chan struct{}
 	outputChan chan string
 	nick       string
 	key        string
 	registered bool
-	connected  bool
 	operator   bool
 	channelMap map[string]*Channel
+	lock       sync.Mutex
 }
 
 type eventType int
@@ -100,12 +103,6 @@ func (m *ClientMode) String() string {
 	}
 	return modeStr
 }
-
-type signalCode int
-
-const (
-	signalStop signalCode = iota
-)
 
 type replyCode int
 

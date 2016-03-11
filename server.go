@@ -34,9 +34,8 @@ func (s *Server) HandleConnection(conn net.Conn) {
 	client := &Client{server: s,
 		connection: conn,
 		outputChan: make(chan string),
-		signalChan: make(chan signalCode, 3),
-		channelMap: make(map[string]*Channel),
-		connected:  true}
+		stopChan:   make(chan struct{}),
+		channelMap: make(map[string]*Channel)}
 
 	go client.clientThread()
 }
