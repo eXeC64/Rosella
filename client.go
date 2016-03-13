@@ -169,9 +169,8 @@ func (c *Client) reply(code replyCode, args ...string) {
 	case rplMsg:
 		c.outputChan <- fmt.Sprintf(":%s PRIVMSG %s %s", args[0], args[1], args[2])
 	case rplList:
-		for _, listItem := range args {
-			c.outputChan <- fmt.Sprintf(":%s 322 %s %s", c.server.name, c.nick, listItem)
-		}
+		c.outputChan <- fmt.Sprintf(":%s 322 %s %s", c.server.name, c.nick, args[0])
+	case rplListEnd:
 		c.outputChan <- fmt.Sprintf(":%s 323 %s", c.server.name, c.nick)
 	case rplOper:
 		c.outputChan <- fmt.Sprintf(":%s 381 %s :You are now an operator", c.server.name, c.nick)
