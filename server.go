@@ -53,7 +53,16 @@ func (s *Server) handleEvent(e Event) {
 	switch e.event {
 	case connected:
 		//Client connected
-		e.client.reply(rplMOTD, s.motd)
+		e.client.reply(rplMOTDStart)
+		motd := s.motd
+		for len(motd) > 80 {
+			e.client.reply(rplMOTD, motd[:80])
+			motd = motd[80:]
+		}
+		if len(motd) > 0 {
+			e.client.reply(rplMOTD, motd)
+		}
+		e.client.reply(rplEndOfMOTD)
 	case disconnected:
 		//Client disconnected
 	case command:
