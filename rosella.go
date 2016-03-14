@@ -121,6 +121,7 @@ const (
 	rplKill
 	rplMsg
 	rplList
+	rplListEnd
 	rplOper
 	rplChannelModeIs
 	rplKick

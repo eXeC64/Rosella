@@ -276,8 +276,6 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 		}
 
 		if len(args) == 0 {
-			chanList := make([]string, 0, len(s.channelMap))
-
 			for channelName, channel := range s.channelMap {
 				if channel.mode.secret {
 					if _, inChannel := channel.clientMap[client.key]; !inChannel {
@@ -286,23 +284,21 @@ func (s *Server) handleCommand(client *Client, command string, args []string) {
 					}
 				}
 				listItem := fmt.Sprintf("%s %d :%s", channelName, len(channel.clientMap), channel.topic)
-				chanList = append(chanList, listItem)
+				client.reply(rplList, listItem)
 			}
 
-			client.reply(rplList, chanList...)
-
+			client.reply(rplListEnd)
 		} else {
 			channels := strings.Split(args[0], ",")
-			chanList := make([]string, 0, len(channels))
 
 			for _, channelName := range channels {
 				if channel, exists := s.channelMap[strings.ToLower(channelName)]; exists {
 					listItem := fmt.Sprintf("%s %d :%s", channelName, len(channel.clientMap), channel.topic)
-					chanList = append(chanList, listItem)
+					client.reply(rplList, listItem)
 				}
 			}
 
-			client.reply(rplList, chanList...)
+			client.reply(rplListEnd)
 		}
 	case "OPER":
 		if client.registered == false {
