@@ -303,10 +303,8 @@ func (c *Client) writeThread(signalChan chan signalCode, outputChan chan string)
 				return
 			}
 		case output := <-outputChan:
-			line := []byte(fmt.Sprintf("%s\r\n", output))
-
 			c.connection.SetWriteDeadline(time.Now().Add(time.Second * 30))
-			if _, err := c.connection.Write(line); err != nil {
+			if _, err := fmt.Fprintf(c.connection, "%s\r\n", output); err != nil {
 				c.disconnect()
 				return
 			}
