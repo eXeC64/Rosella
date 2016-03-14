@@ -183,17 +183,11 @@ func (c *Client) reply(code replyCode, args ...string) {
 		c.outputChan <- fmt.Sprintf(":%s 371 %s :%s", c.server.name, c.nick, args[0])
 	case rplVersion:
 		c.outputChan <- fmt.Sprintf(":%s 351 %s %s", c.server.name, c.nick, args[0])
-	case rplMOTD:
-		motd := args[0]
+	case rplMOTDStart:
 		c.outputChan <- fmt.Sprintf(":%s 375 %s :- Message of the day - ", c.server.name, c.nick)
-		for size := len(motd); size > 0; size = len(motd) {
-			if size <= 80 {
-				c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd)
-				break
-			}
-			c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, motd[:80])
-			motd = motd[80:]
-		}
+	case rplMOTD:
+		c.outputChan <- fmt.Sprintf(":%s 372 %s :- %s", c.server.name, c.nick, args[0])
+	case rplEndOfMOTD:
 		c.outputChan <- fmt.Sprintf(":%s 376 %s :End of MOTD Command", c.server.name, c.nick)
 	case rplPong:
 		c.outputChan <- fmt.Sprintf(":%s PONG %s %s", c.server.name, c.nick, c.server.name)

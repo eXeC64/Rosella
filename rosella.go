@@ -126,7 +126,9 @@ const (
 	rplKick
 	rplInfo
 	rplVersion
+	rplMOTDStart
 	rplMOTD
+	rplEndOfMOTD
 	rplPong
 	errMoreArgs
 	errNoNick
