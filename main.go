@@ -43,8 +43,8 @@ func main() {
 
 		lines := strings.Split(string(data[:size]), "\n")
 		for _, line := range lines {
-			if strings.HasPrefix(line, "#") {
-				continue
+			if i := strings.IndexRune(line, '#'); i > -1 {
+				line = line[:i]
 			}
 			fields := strings.Fields(line)
 
