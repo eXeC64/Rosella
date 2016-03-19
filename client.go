@@ -60,7 +60,7 @@ func (c *Client) joinChannel(channelName string) {
 		newChannel = true
 	}
 
-	if _, inChannel := channel.clientMap[c.nick]; inChannel {
+	if _, inChannel := channel.clientMap[c.key]; inChannel {
 		//Client is already in the channel, do nothing
 		return
 	}
@@ -71,8 +71,8 @@ func (c *Client) joinChannel(channelName string) {
 		mode.operator = true
 	}
 
-	channel.clientMap[c.nick] = c
-	channel.modeMap[c.nick] = mode
+	channel.clientMap[c.key] = c
+	channel.modeMap[c.key] = mode
 	c.channelMap[channelKey] = channel
 
 	for _, client := range channel.clientMap {
@@ -91,7 +91,7 @@ func (c *Client) joinChannel(channelName string) {
 	for _, client := range channel.clientMap {
 		prefix := ""
 
-		if mode, exists := channel.modeMap[client.nick]; exists {
+		if mode, exists := channel.modeMap[client.key]; exists {
 			prefix = mode.Prefix()
 		}
 
