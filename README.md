@@ -77,20 +77,17 @@ authority you trust.
 The auth file provides a list of usernames and hashed passwords that the /OPER
 command will accept. The format is one username and password pair per line.
 Lines starting with a `#` are ignored as comments, as are blank lines. The
-password is hashed with SHA1. Username and password are placed on the same
+password is hashed with bcrypt. Username and password are placed on the same
 line and separated by a single space, as such:
 
     #This line is a comment
-    username1 sha1_hashed_password
+    username1 bcrypt_hashed_password
 
     #Another comment, blank lines are ignored
-    username2 sha1_hashed_password
-    username3 sha1_hashed_password
+    username2 bcrypt_hashed_password
+    username3 bcrypt_hashed_password
 
-**Cracking SHA1 hashed passwords is trivial. Do not rely upon it to keep your
-passwords secure. It is only used here to protect against people seeing your
-screen briefly when the auth file is open. Treat this file as you would treat
-a private key file.**
+**Treat this file as you would treat a private key file.**
 
 Design Principles
 -----------------
