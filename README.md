@@ -1,6 +1,6 @@
 Rosella
 =======
-[![Build Status](https://drone.io/github.com/eXeC64/Rosella/status.png)](https://drone.io/github.com/eXeC64/Rosella/latest)
+
 About
 -----
 Rosella is a small ircd (Internet Relay Chat Daemon).
@@ -46,16 +46,11 @@ The following irc commands are supported:
 * USER
 * VERSION
 
-Download
+Building
 --------
-The latest x86-64 build of Rosella is available from Drone.io's continuous
-integration service.
 
-[Download Latest Build](https://drone.io/github.com/eXeC64/Rosella/files/Rosella)
-
-If you would rather review the code and then compile it yourself then run this
-on a system with Go 1.1.2 or later installed.
-
+To fetch the source code, ensure you have Go 1.1.2 or later installed, and your
+`$GOPATH` properly configured.
 ~~~
 go get github.com/eXeC64/Rosella
 cd $GOPATH/src/github.com/eXeC64/Rosella
@@ -68,12 +63,12 @@ Usage
 -----
 Command line options can be found by running `Rosella -h`.
 
-###x.509 Certificate###
+### x.509 Certificate ###
 Rosella expects you to provide a valid x.509 certificate and private key.
 You can generate these yourself with openssl, or obtain one from a certificate
 authority you trust.
 
-###Auth File###
+### Auth File ###
 The auth file provides a list of usernames and hashed passwords that the /OPER
 command will accept. The format is one username and password pair per line.
 Lines starting with a `#` are ignored as comments, as are blank lines. The
